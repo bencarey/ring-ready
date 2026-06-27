@@ -266,75 +266,81 @@ const VB = "0 0 360 240";
 /* ============================ Data: courses ============================ */
 const COURSES = [
   {
-    id:"classic", name:"Hunter Classic", level:"2'6\" Hunters",
+    id:"shortstirrup", name:"Short Stirrup Hunter", level:"2'0\" Short Stirrup",
     jumps:[
-      {n:1,x:115,y:185},{n:2,x:245,y:185},
-      {n:3,x:235,y:150},{n:4,x:140,y:95},
-      {n:5,x:115,y:55},{n:6,x:245,y:55},
-      {n:7,x:235,y:90},{n:8,x:140,y:150}
+      {n:1,x:115,y:52},{n:2,x:245,y:52},
+      {n:3,x:235,y:82},{n:4,x:140,y:150},
+      {n:5,x:115,y:190},{n:6,x:245,y:190},
+      {n:7,x:235,y:150},{n:8,x:125,y:82}
     ],
-    path:[[60,150],[115,185],[245,185],[305,178],[308,150],[235,150],[140,95],[78,82],[92,55],[115,55],[245,55],[305,62],[306,92],[235,90],[140,150],[88,165]],
+    lines:[{a:0,b:1,s:6},{a:2,b:3,s:5},{a:4,b:5,s:6},{a:6,b:7,s:5}],
+    path:[[180,205],[88,118],[115,52],[245,52],[305,68],[235,82],[140,150],[95,170],[115,190],[245,190],[305,172],[235,150],[125,82],[88,95]],
     steps:[
-      "Pick up the canter and ride a smooth opening circle to set your pace.",
-      "Fences 1 & 2 — the outside line down the near rail. Ride forward in a steady rhythm.",
-      "Turn right and roll back across the diagonal line, 3 to 4.",
-      "Turn left to the far outside line, 5 & 6.",
-      "Bend right to the final diagonal line, 7 to 8.",
-      "Finish with a closing circle, then walk on a long rein."
+      "Trot into the ring, pick up the right-lead canter, and ride one smooth opening circle to settle into an even hunter pace.",
+      "Fences 1 and 2 — the outside line down the top rail in a steady six strides. Keep the same rhythm in and out.",
+      "Stay on the right lead and roll back to the right for the diagonal line, 3 to 4, in five.",
+      "Land off the diagonal and make a smooth flying change to the left lead, then turn left to the outside line, 5 and 6, in six.",
+      "Keep the left lead and bend left to the last diagonal line, 7 to 8, in five.",
+      "Ride a balanced closing circle, come back to a trot, and leave the ring on a long rein."
     ]
   },
   {
-    id:"shortstirrup", name:"Short Stirrup Starter", level:"2' Short Stirrup",
+    id:"pony", name:"Pony Hunter", level:"2'6\" Pony Hunter",
     jumps:[
-      {n:1,x:115,y:185},{n:2,x:245,y:185},
-      {n:3,x:115,y:55},{n:4,x:245,y:55},
-      {n:5,x:235,y:150},{n:6,x:140,y:95}
+      {n:1,x:245,y:52},{n:2,x:115,y:52},
+      {n:3,x:125,y:82},{n:4,x:235,y:150},
+      {n:5,x:245,y:190},{n:6,x:115,y:190},
+      {n:7,x:140,y:150},{n:8,x:235,y:82}
     ],
-    path:[[60,150],[115,185],[245,185],[305,178],[306,118],[305,62],[245,55],[115,55],[70,70],[85,150],[235,150],[140,95],[80,82]],
+    lines:[{a:0,b:1,s:5},{a:2,b:3,s:6},{a:4,b:5,s:5},{a:6,b:7,s:6}],
+    path:[[180,205],[305,118],[245,52],[115,52],[80,68],[125,82],[235,150],[300,172],[245,190],[115,190],[80,170],[140,150],[235,82],[305,95]],
     steps:[
-      "Open with a relaxed circle at the trot, then pick up your canter.",
-      "Fences 1 & 2 — outside line along the near rail, count an even rhythm.",
-      "Turn up the far side for the outside line, 3 & 4.",
-      "Cross the middle on the diagonal line, 5 to 6.",
-      "Quiet closing circle and a pat for your pony."
+      "Trot in, pick up the left-lead canter, and make one quiet opening circle — ponies show best at a soft, even pace.",
+      "Fences 1 and 2 — the outside line along the top rail in five steady strides.",
+      "Stay on the left lead and turn left to the diagonal line, 3 to 4, riding six.",
+      "After the diagonal, make a flying change to the right lead and bend right to the outside line, 5 and 6, in five.",
+      "Keep the right lead around to the final diagonal line, 7 to 8, in six.",
+      "Soft closing circle, back to a trot, and a pat on the way out."
     ]
   },
   {
-    id:"medal", name:"Equitation Medal", level:"2'9\" Equitation",
+    id:"childrens", name:"Children's Hunter", level:"3'0\" Children's Hunter",
     jumps:[
-      {n:1,x:115,y:185},{n:2,x:245,y:185},
-      {n:3,x:235,y:150},{n:4,x:140,y:95},
-      {n:5,x:180,y:55},
-      {n:6,x:245,y:120},{n:7,x:115,y:120},
-      {n:8,x:180,y:185}
+      {n:1,x:115,y:52},{n:2,x:245,y:52},
+      {n:3,x:235,y:82},{n:4,x:140,y:150},
+      {n:5,x:180,y:120},
+      {n:6,x:115,y:190},{n:7,x:245,y:190},
+      {n:8,x:180,y:52}
     ],
-    path:[[60,150],[115,185],[245,185],[305,175],[300,150],[235,150],[140,95],[110,70],[180,55],[250,70],[290,120],[245,120],[115,120],[90,150],[120,185],[180,185],[230,180]],
+    lines:[{a:0,b:1,s:7},{a:2,b:3,s:6},{a:5,b:6,s:6}],
+    path:[[180,205],[88,115],[115,52],[245,52],[300,72],[235,82],[140,150],[180,120],[120,170],[115,190],[245,190],[305,150],[230,80],[180,52],[110,72]],
     steps:[
-      "Trot in, halt and salute the judge, then move off at the canter.",
-      "Fences 1 & 2 — outside line, show an even, balanced pace.",
-      "Rollback right to the diagonal line, 3 to 4.",
-      "Sit up the centerline to the single, fence 5.",
-      "Bending line across the middle, 6 to 7 — count your strides.",
-      "Finish straight to the single at 8, then closing circle and halt."
+      "Trot in, pick up the right-lead canter, and ride your opening circle to a forward but even hunter pace.",
+      "Fences 1 and 2 — the outside line down the top rail in seven.",
+      "Roll back to the right for the diagonal line, 3 to 4, in six.",
+      "Make your flying change for the new direction and ride straight to the single at 5 in the middle — balanced and quiet.",
+      "Continue to the bottom outside line, 6 and 7, in six steady strides.",
+      "Change again for the turn, come up to the single at 8, then a closing circle and trot out."
     ]
   },
   {
-    id:"handy", name:"Handy Hunter", level:"3' Hunters",
+    id:"derby", name:"Hunter Derby — Handy Round", level:"3'0\" Hunter Derby",
     jumps:[
-      {n:1,x:115,y:185},{n:2,x:245,y:185},
-      {n:3,x:235,y:90},{n:4,x:130,y:150},
-      {n:5,x:115,y:55},
-      {n:6,x:245,y:55},
-      {n:7,x:235,y:150},{n:8,x:130,y:95}
+      {n:1,x:115,y:52},{n:2,x:245,y:52},
+      {n:3,x:235,y:120},
+      {n:4,x:140,y:150},{n:5,x:235,y:82},
+      {n:6,x:115,y:120},
+      {n:7,x:115,y:190},{n:8,x:245,y:190}
     ],
-    path:[[60,150],[115,185],[245,185],[305,170],[300,90],[235,90],[130,150],[78,120],[90,55],[115,55],[180,40],[245,55],[300,70],[305,150],[235,150],[130,95],[78,90]],
+    lines:[{a:0,b:1,s:6},{a:3,b:4,s:5},{a:6,b:7,s:6}],
+    path:[[180,205],[88,115],[115,52],[245,52],[280,80],[235,120],[140,150],[235,82],[160,95],[115,120],[100,160],[115,190],[245,190],[300,178]],
     steps:[
-      "Opening circle to find a forward hunter pace.",
-      "Fences 1 & 2 — outside line down the near rail.",
-      "Turn right and ride the diagonal line, 3 to 4.",
-      "Inside rollback turn to the single, fence 5 — show your handiness.",
-      "Across to the single at 6, stay balanced through the turn.",
-      "Final diagonal line, 7 to 8, then a strong closing circle."
+      "Trot in, pick up the right-lead canter, and open with a balanced circle — derby judges reward a bold, smooth, forward pace.",
+      "Fences 1 and 2 — the outside line down the top rail in six.",
+      "Show your handiness: a neat, tight inside turn to the right back to the single at 3.",
+      "Flying change for the new direction, then the diagonal line, 4 to 5, in five forward strides.",
+      "Come back across to the single at 6 — keep it straight and balanced.",
+      "Roll down to the bottom outside line, 7 and 8, in six, then a strong closing circle and trot out."
     ]
   }
 ];
@@ -442,6 +448,19 @@ function courseStudySVG(c){
   s += `<path class="track" marker-end="url(#arr)" d="${smoothD(path)}"/>`;
   s += `<circle class="startdot" cx="${path[0][0]}" cy="${path[0][1]}" r="4"/>`;
   s += `<text class="lbl" x="${path[0][0]-4}" y="${path[0][1]-8}">start</text>`;
+  // stride-count badges on each line (gold), so the map reads like a real course.
+  // Placed near the start of the line and nudged clear of the central crossing / rails.
+  (c.lines||[]).forEach(L=>{
+    const a=c.jumps[L.a], b=c.jumps[L.b];
+    let px=a.x+0.3*(b.x-a.x), py=a.y+0.3*(b.y-a.y);
+    let ox=0, oy=0;
+    if(py<80) oy=16;                 // near top rail -> nudge inward (down)
+    else if(py>160) oy=-16;          // near bottom rail -> nudge up
+    else { const vx=px-180, vy=py-120, mm=Math.hypot(vx,vy)||1; ox=vx/mm*18; oy=vy/mm*18; } // interior diagonal -> push outward
+    const x=px+ox, y=py+oy;
+    s += `<rect x="${(x-10).toFixed(1)}" y="${(y-8).toFixed(1)}" width="20" height="16" rx="8" fill="#c9a227"/>`
+       + `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="800" fill="#4a3800">${L.s}</text>`;
+  });
   c.jumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(c.jumps,i)) + badge(j,j.n); });
   s += `</svg>`;
   return s;
@@ -516,6 +535,7 @@ function setTab(which){
 function renderStudy(c){
   const steps = c.steps || c.jumps.map((j,i)=> i===0?`Open with a circle, then ride to fence 1.`:`Continue to fence ${j.n}.`);
   let h = `<div class="ringwrap">${courseStudySVG(c)}</div>`;
+  if(c.lines && c.lines.length) h += `<div class="hintbar">🟡 Gold number = the strides you ride in each line · dashed line = your track</div>`;
   h += `<div class="card"><strong style="color:var(--green-dk)">Ride it like this</strong><ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>`;
   el('course-body').innerHTML = h;
 }
