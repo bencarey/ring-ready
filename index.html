@@ -178,6 +178,18 @@
   .tabs button{flex:1;padding:11px;border:none;border-radius:12px;background:var(--green-soft);color:var(--green-dk);font-weight:700;font-size:14px;cursor:pointer}
   .tabs button.active{background:var(--green);color:#fff}
   .scoreline{font-size:13px;color:var(--muted);text-align:center;margin-top:4px}
+  /* Photo calibration */
+  .calib{position:fixed;inset:0;background:#0d2a1d;z-index:80;display:flex;flex-direction:column}
+  .calib-top{padding:calc(var(--safe-top) + 14px) 16px 8px;color:#fff;text-align:center}
+  .calib-msg{font-size:15px;font-weight:700;line-height:1.35}
+  .calib-sub{font-size:12px;color:var(--gold-lt);margin-top:4px}
+  .calib-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px}
+  .calib-stage img{max-width:96vw;max-height:100%;width:auto;height:auto;border-radius:8px;display:block;touch-action:manipulation}
+  #cmarks{position:absolute;inset:0;pointer-events:none}
+  .cmark{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--gold);color:#3a2c00;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)}
+  .cmark.gate{background:var(--green-ok);color:#fff;font-size:14px}
+  .calib-bar{display:flex;gap:8px;padding:12px 16px calc(12px + var(--safe-bot));background:#0a2217}
+  .calib-bar .btn{flex:1}
 </style>
 </head>
 <body>
@@ -686,7 +698,7 @@ function renderBuilder(){
   });
   el('bclear').addEventListener('click',()=>{buildJumps=[];drawBuildJumps();});
   el('bsave').addEventListener('click',saveBuild);
-  el('bphotoBtn').addEventListener('click',()=>pickImage(url=>{ buildPhoto=url; updateBuildPhoto(); }));
+  el('bphotoBtn').addEventListener('click',()=>pickImage(raw=>openCalibration(raw,url=>{ buildPhoto=url; updateBuildPhoto(); })));
   el('bphotoClear').addEventListener('click',()=>{ buildPhoto=null; updateBuildPhoto(); });
   el('bopacity').addEventListener('input',e=>{ const im=el('bphoto'); if(im) im.setAttribute('opacity', e.target.value/100); });
 }
@@ -729,6 +741,112 @@ function downscaleImage(img,max=1100,q=0.72){
   const cv=document.createElement('canvas'); cv.width=w; cv.height=hgt;
   cv.getContext('2d').drawImage(img,0,0,w,hgt);
   try{ return cv.toDataURL('image/jpeg',q); }catch(e){ return img.src; }
+}
+
+/* Calibrate a posted-course photo: tap the ring's 4 corners + the in-gate,
+   then warp it so the ring fills the app ring with the gate at the bottom. */
+function openCalibration(rawUrl,onDone){
+  const ov=document.createElement('div'); ov.className='calib';
+  ov.innerHTML=`
+    <div class="calib-top"><div class="calib-msg" id="cmsg">Tap the 4 corners of the ring in the photo.</div>
+      <div class="calib-sub" id="csub">Tap corner 1 of 4</div></div>
+    <div class="calib-stage" id="cstage"><img id="cimg" alt="course photo"><div id="cmarks"></div></div>
+    <div class="calib-bar">
+      <button class="btn ghost sm" id="ccancel">Cancel</button>
+      <button class="btn ghost sm" id="credo" style="display:none">Start over</button>
+      <button class="btn ghost sm" id="craw">Use as-is</button>
+      <button class="btn sm" id="cuse" style="display:none">Use this</button>
+    </div>`;
+  document.body.appendChild(ov);
+  const img=ov.querySelector('#cimg'), stageEl=ov.querySelector('#cstage'), marks=ov.querySelector('#cmarks');
+  let pts=[], gate=null, stage='corners';
+  img.src=rawUrl;
+  function setMsg(m,s){ ov.querySelector('#cmsg').textContent=m; if(s!==undefined) ov.querySelector('#csub').textContent=s; }
+  function redraw(){
+    marks.innerHTML='';
+    pts.forEach((p,i)=>{ const m=document.createElement('div'); m.className='cmark'; m.style.left=p.dx+'px'; m.style.top=p.dy+'px'; m.textContent=i+1; marks.appendChild(m); });
+    if(gate){ const m=document.createElement('div'); m.className='cmark gate'; m.style.left=gate.dx+'px'; m.style.top=gate.dy+'px'; m.textContent='G'; marks.appendChild(m); }
+  }
+  stageEl.addEventListener('click',ev=>{
+    const ir=img.getBoundingClientRect(), sr=stageEl.getBoundingClientRect();
+    if(ev.clientX<ir.left||ev.clientX>ir.right||ev.clientY<ir.top||ev.clientY>ir.bottom) return;
+    const sx=(ev.clientX-ir.left)/ir.width*img.naturalWidth;
+    const sy=(ev.clientY-ir.top)/ir.height*img.naturalHeight;
+    const p={sx,sy,dx:ev.clientX-sr.left,dy:ev.clientY-sr.top};
+    if(stage==='corners'){
+      pts.push(p); redraw();
+      if(pts.length===4){ stage='gate'; setMsg('Now tap the in-gate (where horses enter the ring).','This sets which side is the bottom.'); }
+      else setMsg('Tap the 4 corners of the ring in the photo.',`Tap corner ${pts.length+1} of 4`);
+    }else if(stage==='gate'){
+      gate=p; redraw(); stage='confirm';
+      setMsg('Looks right?','Use this photo, or start over.');
+      ov.querySelector('#cuse').style.display=''; ov.querySelector('#credo').style.display='';
+    }
+  });
+  function close(){ ov.remove(); }
+  ov.querySelector('#ccancel').addEventListener('click',close);
+  ov.querySelector('#craw').addEventListener('click',()=>{ onDone(rawUrl); close(); });
+  ov.querySelector('#credo').addEventListener('click',()=>{
+    pts=[]; gate=null; stage='corners'; redraw();
+    setMsg('Tap the 4 corners of the ring in the photo.','Tap corner 1 of 4');
+    ov.querySelector('#cuse').style.display='none'; ov.querySelector('#credo').style.display='none';
+  });
+  ov.querySelector('#cuse').addEventListener('click',()=>{
+    setMsg('Lining up the photo…','');
+    const ordered=orderCorners(pts.map(p=>[p.sx,p.sy]), gate?[gate.sx,gate.sy]:null);
+    rectifyPhoto(rawUrl,ordered,url=>{ onDone(url); close(); });
+  });
+}
+/* order 4 points to [TL,TR,BR,BL], then rotate so the gate edge is the bottom */
+function orderCorners(p,gate){
+  let TL=p[0],TR=p[0],BR=p[0],BL=p[0],sMin=1e9,sMax=-1e9,dMin=1e9,dMax=-1e9;
+  p.forEach(q=>{ const s=q[0]+q[1], d=q[0]-q[1];
+    if(s<sMin){sMin=s;TL=q;} if(s>sMax){sMax=s;BR=q;}
+    if(d<dMin){dMin=d;BL=q;} if(d>dMax){dMax=d;TR=q;} });
+  let c=[TL,TR,BR,BL];
+  if(gate){
+    const edges=[[0,1],[1,2],[2,3],[3,0]]; let best=2,bd=1e9;
+    edges.forEach((e,i)=>{ const mx=(c[e[0]][0]+c[e[1]][0])/2, my=(c[e[0]][1]+c[e[1]][1])/2; const dd=Math.hypot(mx-gate[0],my-gate[1]); if(dd<bd){bd=dd;best=i;} });
+    const r=((best-2)%4+4)%4;
+    c=c.slice(r).concat(c.slice(0,r));
+  }
+  return c;
+}
+/* projective map from unit square corners (0,0)(1,0)(1,1)(0,1) to a quad */
+function squareToQuad(q){
+  const x0=q[0][0],y0=q[0][1],x1=q[1][0],y1=q[1][1],x2=q[2][0],y2=q[2][1],x3=q[3][0],y3=q[3][1];
+  const dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3;
+  let a,b,c,d,e,f,g,h;
+  if(Math.abs(dx3)<1e-6&&Math.abs(dy3)<1e-6){ a=x1-x0;b=x2-x1;c=x0;d=y1-y0;e=y2-y1;f=y0;g=0;h=0; }
+  else{ const den=dx1*dy2-dx2*dy1; g=(dx3*dy2-dx2*dy3)/den; h=(dx1*dy3-dx3*dy1)/den;
+    a=x1-x0+g*x1; b=x3-x0+h*x3; c=x0; d=y1-y0+g*y1; e=y3-y0+h*y3; f=y0; }
+  return [a,b,c,d,e,f,g,h];
+}
+/* warp the photo so the ring corners map to a ring-shaped rectangle */
+function rectifyPhoto(rawUrl,corners,cb){
+  const img=new Image();
+  img.onload=()=>{
+    const sw=img.naturalWidth, sh=img.naturalHeight;
+    const sc=document.createElement('canvas'); sc.width=sw; sc.height=sh;
+    const sx2=sc.getContext('2d'); sx2.drawImage(img,0,0);
+    let src; try{ src=sx2.getImageData(0,0,sw,sh).data; }catch(e){ cb(rawUrl); return; }
+    const OW=660, OH=Math.round(OW*(RING.y1-RING.y0)/(RING.x1-RING.x0)); // match ring aspect
+    const oc=document.createElement('canvas'); oc.width=OW; oc.height=OH;
+    const octx=oc.getContext('2d'); const out=octx.createImageData(OW,OH); const od=out.data;
+    const [a,b,c,d,e,f,g,h]=squareToQuad(corners);
+    for(let vy=0;vy<OH;vy++){ const v=vy/OH;
+      for(let vx=0;vx<OW;vx++){ const u=vx/OW;
+        const w=g*u+h*v+1, X=(a*u+b*v+c)/w, Y=(d*u+e*v+f)/w;
+        const ix=X|0, iy=Y|0, o=(vy*OW+vx)*4;
+        if(ix>=0&&ix<sw&&iy>=0&&iy<sh){ const si=(iy*sw+ix)*4; od[o]=src[si];od[o+1]=src[si+1];od[o+2]=src[si+2];od[o+3]=255; }
+        else { od[o]=238;od[o+1]=244;od[o+2]=238;od[o+3]=255; }
+      }
+    }
+    octx.putImageData(out,0,0);
+    try{ cb(oc.toDataURL('image/jpeg',0.82)); }catch(e){ cb(rawUrl); }
+  };
+  img.onerror=()=>cb(rawUrl);
+  img.src=rawUrl;
 }
 function drawBuildJumps(){
   const g = el('bjumps'); if(!g) return;
