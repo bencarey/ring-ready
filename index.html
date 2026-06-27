@@ -633,15 +633,16 @@ function renderTrace(c){
   const rott = getRot(c.id); ROT = rott;
   const ideal = c.path || c.jumps.map(j=>[j.x,j.y]);
   const sx=ideal[0][0], sy=ideal[0][1];
-  let h = `<div class="status" id="tstatus">Press and drag to ride the whole track — through every fence in order, the way you'd ride it.</div>`;
+  let h = `<div class="status" id="tstatus">Ride the whole track from memory — finger-trace through every fence in the right order.</div>`;
   h += `<div class="ringwrap"><svg class="ring trace" viewBox="${ringVB(rott)}" id="tsvg"><g transform="rotate(${rott} 180 120)">`;
   h += ringFrameSVG({gate:true,gateFrac:c.gate});
   h += `<circle class="startdot" cx="${sx}" cy="${sy}" r="4"/>`;
   h += `<text class="lbl" x="${sx-4}" y="${sy-8}" transform="rotate(${-rott} ${sx-4} ${sy-8})">start</text>`;
-  c.jumps.forEach((j,i)=>{ h += poleFor(j,jumpDir(c.jumps,i),'faint'); h += `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="9"/><text class="badge-t" x="${j.x}" y="${j.y}" transform="rotate(${-rott} ${j.x} ${j.y})">${j.n}</text>`; });
+  // show where the jumps are, but NOT their order — she has to remember it
+  c.jumps.forEach((j,i)=>{ h += poleFor(j,jumpDir(c.jumps,i),'faint') + `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="3.5"/>`; });
   h += `<path class="ideal" id="tideal" style="display:none" d="${smoothD(ideal)}"/>`;
-  h += `</g><path class="tdraw" id="tdraw" d=""/>`;
-  h += `</svg></div>`;
+  h += `<path class="tdraw" id="tdraw" d=""/>`;
+  h += `</g></svg></div>`;
   ROT = 0;
   h += `<div class="btn-row"><button class="btn ghost" id="tclear">Clear</button><button class="btn gold" id="tshow">Show ideal track</button></div>`;
   h += `<div class="scoreline" id="tscore"></div>`;
@@ -650,8 +651,15 @@ function renderTrace(c){
   const svg = el('tsvg'), draw = el('tdraw');
   let drawing=false, pts=[];
   function setStatus(m,cls){const s=el('tstatus');s.textContent=m;s.className='status'+(cls?' '+cls:'');}
-  function start(e){ e.preventDefault(); drawing=true; pts=[]; add(e); }
-  function add(e){ if(!drawing) return; const p=svgPoint(svg,e); pts.push([p.x,p.y]); draw.setAttribute('d', smoothD(pts)); }
+  function start(e){ e.preventDefault(); drawing=true; pts=[]; if(e.pointerId!=null&&svg.setPointerCapture){ try{svg.setPointerCapture(e.pointerId);}catch(_){} } add(e); }
+  function add(e){ if(!drawing) return;
+    const d=svgPoint(svg,e); const cc=rotPt(d.x,d.y,-rott); // tap -> course space
+    // keep the line inside the ring — clamp to the rail; a polyline between
+    // in-ring points can't leave the (rectangular) ring.
+    const cx=Math.max(RING.x0+2,Math.min(RING.x1-2,cc.x)), cy=Math.max(RING.y0+2,Math.min(RING.y1-2,cc.y));
+    pts.push([cx,cy]);
+    draw.setAttribute('d', pts.length>1 ? 'M '+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' L ') : '');
+  }
   function end(){ if(!drawing) return; drawing=false; evaluate(); }
   function evaluate(){
     if(pts.length<6){ setStatus('Draw your whole track around the ring with your finger.'); return; }
@@ -659,9 +667,8 @@ function renderTrace(c){
     let expected=0;
     for(const p of pts){
       if(expected>=c.jumps.length) break;
-      const cp=rotPt(p[0],p[1],-rott);
       const j=c.jumps[expected];
-      if(Math.hypot(j.x-cp.x,j.y-cp.y)<26) expected++;
+      if(Math.hypot(j.x-p[0],j.y-p[1])<26) expected++;
     }
     const total=c.jumps.length;
     if(expected===total){
@@ -674,12 +681,12 @@ function renderTrace(c){
   svg.addEventListener('pointerdown',start);
   svg.addEventListener('pointermove',add);
   svg.addEventListener('pointerup',end);
-  svg.addEventListener('pointerleave',end);
+  svg.addEventListener('pointercancel',end);
   // touch fallback for browsers without pointer events
   svg.addEventListener('touchstart',start,{passive:false});
   svg.addEventListener('touchmove',e=>{e.preventDefault();add(e);},{passive:false});
   svg.addEventListener('touchend',end);
-  el('tclear').addEventListener('click',()=>{pts=[];draw.setAttribute('d','');el('tideal').style.display='none';el('tscore').textContent='';setStatus('Press and drag to ride the whole track — through every fence in order, the way you\'d ride it.');});
+  el('tclear').addEventListener('click',()=>{pts=[];draw.setAttribute('d','');el('tideal').style.display='none';el('tscore').textContent='';setStatus('Ride the whole track from memory — finger-trace through every fence in the right order.');});
   el('tshow').addEventListener('click',()=>{const ti=el('tideal');ti.style.display=ti.style.display==='none'?'block':'none';});
 }
 
