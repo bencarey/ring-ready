@@ -199,8 +199,10 @@
   .ribbon-btn{position:absolute;top:calc(var(--safe-top) + 16px);right:16px;background:rgba(255,255,255,.16);border:none;border-radius:999px;padding:4px 12px 4px 6px;display:flex;align-items:center;gap:5px;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
   .ribbon-btn:active{transform:scale(.96)}
   .celebrate{position:fixed;inset:0;background:rgba(10,34,23,.78);z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .25s}
-  .cel-card{background:#fff;border-radius:22px;padding:26px 22px;max-width:330px;width:100%;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.45)}
+  .cel-card{position:relative;z-index:2;background:#fff;border-radius:22px;padding:26px 22px;max-width:330px;width:100%;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.45)}
   .cel-card .rose{display:inline-block;animation:pop .55s cubic-bezier(.2,1.35,.4,1)}
+  .confetti-c{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .cel-tap{font-size:12px;color:var(--muted);margin-top:14px;letter-spacing:.3px}
   @keyframes pop{from{transform:scale(.3) rotate(-18deg);opacity:0}to{transform:none;opacity:1}}
   .cel-card h2{margin:8px 0 2px;color:var(--green-dk);font-size:24px}
   .cel-card p{margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.4}
@@ -1302,13 +1304,33 @@ function awardRibbon(place,activity,detail){
 }
 function celebrateRibbon(place,detail){
   const ov=document.createElement('div'); ov.className='celebrate';
-  ov.innerHTML=`<div class="cel-card"><div class="rose">${ribbonSVG(place,86)}</div>
-    <h2>${PLACE_NAME[place]} Place!</h2><p>${esc(detail)}</p>
-    <button class="btn gold" id="celOk">Add to my ribbons 🎉</button></div>`;
+  ov.innerHTML=`<canvas class="confetti-c"></canvas><div class="cel-card"><div class="rose">${ribbonSVG(place,86)}</div>
+    <h2>${PLACE_NAME[place]} Place!</h2><p>${esc(detail)}</p><div class="cel-tap">tap to continue</div></div>`;
   document.body.appendChild(ov);
-  const close=()=>ov.remove();
-  ov.querySelector('#celOk').addEventListener('click',close);
-  ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+  const stop=confettiBurst(ov.querySelector('.confetti-c'));
+  let closed=false;
+  const close=()=>{ if(closed) return; closed=true; clearTimeout(timer); stop(); ov.remove(); };
+  ov.addEventListener('click',close);
+  const timer=setTimeout(close,3200);
+}
+/* Lightweight canvas confetti — no dependencies */
+function confettiBurst(canvas){
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width=window.innerWidth, H=canvas.height=window.innerHeight;
+  const cols=['#2150d8','#c33126','#e6b400','#2e8b57','#c9a227','#e85fa3','#ffffff'];
+  const cx=W/2, cy=H*0.4, P=[];
+  for(let i=0;i<150;i++){ const a=Math.random()*Math.PI*2, sp=4+Math.random()*9;
+    P.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-4,rot:Math.random()*6,vr:(Math.random()-0.5)*0.45,w:5+Math.random()*6,h:9+Math.random()*8,c:cols[i%cols.length]}); }
+  let f=0, raf=0, alive=true;
+  function frame(){
+    if(!alive) return;
+    f++; ctx.clearRect(0,0,W,H); ctx.globalAlpha = f>140 ? Math.max(0,1-(f-140)/45) : 1;
+    for(const p of P){ p.vy+=0.18; p.vx*=0.99; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore(); }
+    if(f<185) raf=requestAnimationFrame(frame); else ctx.clearRect(0,0,W,H);
+  }
+  raf=requestAnimationFrame(frame);
+  return ()=>{ alive=false; cancelAnimationFrame(raf); };
 }
 function openRibbonCase(){
   const list=getRibbons(); const counts={}; list.forEach(r=>counts[r.p]=(counts[r.p]||0)+1);
