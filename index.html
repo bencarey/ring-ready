@@ -621,10 +621,11 @@ function renderQuiz(c){
   h += `</g></svg></div>`;
   ROT = 0;
   h += `<div class="btn-row"><button class="btn ghost" id="qreset">Restart</button><button class="btn gold" id="qpeek">Show me</button></div>`;
+  h += `<div class="hintbar">Tapped the wrong one? Tap a fence you've already placed to undo back to it.</div>`;
   h += `<div class="scoreline" id="qscore"></div>`;
   el('course-body').innerHTML = h;
 
-  let expected = 0; let wrongs = 0; let done=false;
+  let expected = 0, wrongs = 0, done=false, awarded=false;
   const svg = el('qsvg');
   function setStatus(msg,cls){const s=el('qstatus');s.textContent=msg;s.className='status'+(cls?' '+cls:'');}
   function reveal(i){
@@ -632,20 +633,29 @@ function renderQuiz(c){
     g.querySelector('.pole').classList.remove('dim');
     g.insertAdjacentHTML('beforeend', badge(j,j.n,rotq));
   }
+  function unreveal(i){
+    const g=el('qj-'+i); if(!g) return;
+    const p=g.querySelector('.pole'); if(p) p.classList.add('dim');
+    g.querySelectorAll('.badge-c,.badge-t').forEach(e=>e.remove());
+  }
   svg.addEventListener('click',(e)=>{
-    if(done) return;
     const pt = svgPoint(svg,e);
     // nearest jump (compare against each jump's on-screen, rotated position)
     let best=-1,bd=1e9;
     c.jumps.forEach((j,i)=>{const d=rotPt(j.x,j.y,rotq); const dist=Math.hypot(d.x-pt.x,d.y-pt.y); if(dist<bd){bd=dist;best=i;}});
     if(best<0||bd>34) return; // too far from any jump
-    if(best===expected){
+    if(best<expected){
+      // undo: un-place this fence and any placed after it (no penalty)
+      for(let i=expected-1;i>=best;i--) unreveal(i);
+      expected=best; done=false;
+      setStatus(`Undone — back to fence ${best+1}. Tap it when you're ready.`);
+    }else if(best===expected){
       reveal(best); expected++;
       if(expected>=c.jumps.length){
         done=true;
         setStatus(wrongs===0?`Perfect round! Clear with no mistakes 🏆`:`Course complete! ${wrongs} wrong tap${wrongs===1?'':'s'}.`, 'ok');
-        const place = wrongs===0?1:(wrongs<=2?2:(wrongs<=4?3:0));
-        awardRibbon(place,'Course order',`${c.name} — ${wrongs===0?'clear round!':wrongs+' wrong tap'+(wrongs===1?'':'s')}`);
+        if(!awarded){ awarded=true; const place = wrongs===0?1:(wrongs<=2?2:(wrongs<=4?3:0));
+          awardRibbon(place,'Course order',`${c.name} — ${wrongs===0?'clear round!':wrongs+' wrong tap'+(wrongs===1?'':'s')}`); }
       }else{
         setStatus(`Nice — fence ${best+1}! Now find fence ${expected+1}.`,'ok');
       }
