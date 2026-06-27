@@ -277,10 +277,10 @@ const COURSES = [
     path:[[180,205],[88,118],[115,52],[245,52],[305,68],[235,82],[140,150],[95,170],[115,190],[245,190],[305,172],[235,150],[125,82],[88,95]],
     steps:[
       "Trot into the ring, pick up the right-lead canter, and ride one smooth opening circle to settle into an even hunter pace.",
-      "Fences 1 and 2 — the outside line down the top rail in a steady six strides. Keep the same rhythm in and out.",
-      "Stay on the right lead and roll back to the right for the diagonal line, 3 to 4, in five.",
-      "Land off the diagonal and make a smooth flying change to the left lead, then turn left to the outside line, 5 and 6, in six.",
-      "Keep the left lead and bend left to the last diagonal line, 7 to 8, in five.",
+      "Fences 1 and 2 — the outside line down the top rail. Keep the same steady rhythm in and out.",
+      "Stay on the right lead and roll back to the right for the diagonal line, 3 to 4.",
+      "Land off the diagonal and make a smooth flying change to the left lead, then turn left to the outside line, 5 and 6.",
+      "Keep the left lead and bend left to the last diagonal line, 7 to 8.",
       "Ride a balanced closing circle, come back to a trot, and leave the ring on a long rein."
     ]
   },
@@ -296,10 +296,10 @@ const COURSES = [
     path:[[180,205],[305,118],[245,52],[115,52],[80,68],[125,82],[235,150],[300,172],[245,190],[115,190],[80,170],[140,150],[235,82],[305,95]],
     steps:[
       "Trot in, pick up the left-lead canter, and make one quiet opening circle — ponies show best at a soft, even pace.",
-      "Fences 1 and 2 — the outside line along the top rail in five steady strides.",
-      "Stay on the left lead and turn left to the diagonal line, 3 to 4, riding six.",
-      "After the diagonal, make a flying change to the right lead and bend right to the outside line, 5 and 6, in five.",
-      "Keep the right lead around to the final diagonal line, 7 to 8, in six.",
+      "Fences 1 and 2 — the outside line along the top rail, soft and even.",
+      "Stay on the left lead and turn left to the diagonal line, 3 to 4.",
+      "After the diagonal, make a flying change to the right lead and bend right to the outside line, 5 and 6.",
+      "Keep the right lead around to the final diagonal line, 7 to 8.",
       "Soft closing circle, back to a trot, and a pat on the way out."
     ]
   },
@@ -316,10 +316,10 @@ const COURSES = [
     path:[[180,205],[88,115],[115,52],[245,52],[300,72],[235,82],[140,150],[180,120],[120,170],[115,190],[245,190],[305,150],[230,80],[180,52],[110,72]],
     steps:[
       "Trot in, pick up the right-lead canter, and ride your opening circle to a forward but even hunter pace.",
-      "Fences 1 and 2 — the outside line down the top rail in seven.",
-      "Roll back to the right for the diagonal line, 3 to 4, in six.",
+      "Fences 1 and 2 — the outside line down the top rail.",
+      "Roll back to the right for the diagonal line, 3 to 4.",
       "Make your flying change for the new direction and ride straight to the single at 5 in the middle — balanced and quiet.",
-      "Continue to the bottom outside line, 6 and 7, in six steady strides.",
+      "Continue to the bottom outside line, 6 and 7, at a steady, even pace.",
       "Change again for the turn, come up to the single at 8, then a closing circle and trot out."
     ]
   },
@@ -336,11 +336,11 @@ const COURSES = [
     path:[[180,205],[88,115],[115,52],[245,52],[280,80],[235,120],[140,150],[235,82],[160,95],[115,120],[100,160],[115,190],[245,190],[300,178]],
     steps:[
       "Trot in, pick up the right-lead canter, and open with a balanced circle — derby judges reward a bold, smooth, forward pace.",
-      "Fences 1 and 2 — the outside line down the top rail in six.",
+      "Fences 1 and 2 — the outside line down the top rail.",
       "Show your handiness: a neat, tight inside turn to the right back to the single at 3.",
-      "Flying change for the new direction, then the diagonal line, 4 to 5, in five forward strides.",
+      "Flying change for the new direction, then the diagonal line, 4 to 5 — ride it forward and smooth.",
       "Come back across to the single at 6 — keep it straight and balanced.",
-      "Roll down to the bottom outside line, 7 and 8, in six, then a strong closing circle and trot out."
+      "Roll down to the bottom outside line, 7 and 8, then a strong closing circle and trot out."
     ]
   }
 ];
@@ -448,19 +448,6 @@ function courseStudySVG(c){
   s += `<path class="track" marker-end="url(#arr)" d="${smoothD(path)}"/>`;
   s += `<circle class="startdot" cx="${path[0][0]}" cy="${path[0][1]}" r="4"/>`;
   s += `<text class="lbl" x="${path[0][0]-4}" y="${path[0][1]-8}">start</text>`;
-  // stride-count badges on each line (gold), so the map reads like a real course.
-  // Placed near the start of the line and nudged clear of the central crossing / rails.
-  (c.lines||[]).forEach(L=>{
-    const a=c.jumps[L.a], b=c.jumps[L.b];
-    let px=a.x+0.3*(b.x-a.x), py=a.y+0.3*(b.y-a.y);
-    let ox=0, oy=0;
-    if(py<80) oy=16;                 // near top rail -> nudge inward (down)
-    else if(py>160) oy=-16;          // near bottom rail -> nudge up
-    else { const vx=px-180, vy=py-120, mm=Math.hypot(vx,vy)||1; ox=vx/mm*18; oy=vy/mm*18; } // interior diagonal -> push outward
-    const x=px+ox, y=py+oy;
-    s += `<rect x="${(x-10).toFixed(1)}" y="${(y-8).toFixed(1)}" width="20" height="16" rx="8" fill="#c9a227"/>`
-       + `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="800" fill="#4a3800">${L.s}</text>`;
-  });
   c.jumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(c.jumps,i)) + badge(j,j.n); });
   s += `</svg>`;
   return s;
@@ -535,7 +522,7 @@ function setTab(which){
 function renderStudy(c){
   const steps = c.steps || c.jumps.map((j,i)=> i===0?`Open with a circle, then ride to fence 1.`:`Continue to fence ${j.n}.`);
   let h = `<div class="ringwrap">${courseStudySVG(c)}</div>`;
-  if(c.lines && c.lines.length) h += `<div class="hintbar">🟡 Gold number = the strides you ride in each line · dashed line = your track</div>`;
+  h += `<div class="hintbar">Dashed line and arrow = the track you ride.</div>`;
   if(c.photo){
     h += `<button class="btn ghost sm" id="viewPhoto" style="margin-bottom:12px">📷 View the posted course</button>`;
     h += `<div id="photoBox" style="display:none;margin-bottom:14px"><img src="${c.photo}" alt="Posted course" style="width:100%;border-radius:14px;box-shadow:var(--shadow)"></div>`;
