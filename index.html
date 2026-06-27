@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#14402b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ring Ready" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="description" content="Learn and memorize the hunter show ring — courses, terminology, and patterns." />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<title>Ring Ready</title>
+<style>
+  :root{
+    --green-dk:#14402b;
+    --green:#1f5138;
+    --green-md:#2d6a4a;
+    --green-soft:#e4ede7;
+    --gold:#c9a227;
+    --gold-lt:#e6c659;
+    --cream:#f6f2e8;
+    --card:#ffffff;
+    --ink:#22302a;
+    --muted:#6c7a72;
+    --red:#c0492f;
+    --green-ok:#2e8b57;
+    --shadow:0 4px 14px rgba(20,64,43,.12);
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bot:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+  }
+  #app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--cream)}
+  /* Header */
+  header{
+    background:linear-gradient(160deg,var(--green-dk),var(--green));
+    color:#fff;padding:calc(var(--safe-top) + 14px) 18px 14px;
+    box-shadow:var(--shadow);position:sticky;top:0;z-index:20;
+  }
+  header .brand{display:flex;align-items:center;gap:10px}
+  header .brand .shoe{width:30px;height:30px;flex:none}
+  header h1{font-size:20px;margin:0;letter-spacing:.3px;font-weight:700}
+  header .greet{font-size:13px;color:var(--gold-lt);margin-top:2px;min-height:16px}
+  /* Main */
+  main{flex:1;padding:16px 16px 96px;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .view{display:none}
+  .view.active{display:block}
+  h2.title{font-size:19px;margin:0 0 4px;color:var(--green-dk)}
+  p.sub{font-size:13px;color:var(--muted);margin:0 0 14px}
+  /* Cards */
+  .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+  .course-card{display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .12s}
+  .course-card:active{transform:scale(.98)}
+  .course-card .badge{
+    width:46px;height:46px;border-radius:12px;flex:none;
+    background:var(--green-soft);display:flex;align-items:center;justify-content:center;
+    color:var(--green-dk);font-weight:800;font-size:18px;
+  }
+  .course-card .meta{flex:1;min-width:0}
+  .course-card .meta .nm{font-weight:700;font-size:15px;color:var(--ink)}
+  .course-card .meta .lv{font-size:12px;color:var(--muted);margin-top:2px}
+  .course-card .chev{color:var(--gold);font-size:22px;font-weight:700}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--gold);color:#5a4500;letter-spacing:.3px}
+  .pill.saved{background:var(--green-md);color:#fff}
+  /* Buttons */
+  button{font-family:inherit}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:none;border-radius:12px;padding:13px 16px;font-size:15px;font-weight:700;
+    background:var(--green);color:#fff;cursor:pointer;transition:transform .1s,filter .1s;width:100%;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.gold{background:var(--gold);color:#4a3800}
+  .btn.ghost{background:transparent;color:var(--green-dk);border:2px solid var(--green-soft)}
+  .btn.sm{width:auto;padding:9px 14px;font-size:13px}
+  .btn-row{display:flex;gap:10px}
+  .btn-row .btn{flex:1}
+  .back{background:none;border:none;color:var(--green-dk);font-size:15px;font-weight:700;padding:6px 0;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:4px}
+  /* Ring SVG */
+  .ringwrap{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:10px;margin-bottom:14px}
+  svg.ring{width:100%;height:auto;display:block;border-radius:10px;touch-action:manipulation}
+  .ring-foot{fill:#eef4ee}
+  .rail{fill:none;stroke:var(--green-dk);stroke-width:3}
+  .gline{stroke:var(--green-md);stroke-width:1.6}
+  .gline.dash{stroke-dasharray:5 5}
+  .gline.gold{stroke:var(--gold)}
+  .pole{stroke:var(--gold);stroke-width:5;stroke-linecap:round}
+  .pole.dim{stroke:#c9b98f}
+  .badge-c{fill:var(--green-dk)}
+  .badge-t{fill:#fff;font-size:11px;font-weight:800;text-anchor:middle;dominant-baseline:central}
+  .track{fill:none;stroke:var(--green-md);stroke-width:2.4;stroke-dasharray:6 6;stroke-linecap:round;opacity:.9}
+  .track.solid{stroke-dasharray:none}
+  .tdraw{fill:none;stroke:var(--green);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+  .ideal{fill:none;stroke:var(--gold);stroke-width:2.6;stroke-dasharray:5 5;stroke-linecap:round;opacity:.95}
+  .pole.faint{stroke:#cdbf93}
+  .badge-c.faint{fill:#9fb3a6}
+  svg.trace{touch-action:none}
+  .startdot{fill:var(--green-ok)}
+  .hit{stroke:transparent;stroke-width:18;fill:none;cursor:pointer}
+  .lbl{font-size:10px;fill:var(--green-dk);font-weight:700}
+  .lbl.w{fill:#fff}
+  /* Steps */
+  ol.steps{margin:6px 0 0;padding-left:0;list-style:none;counter-reset:s}
+  ol.steps li{position:relative;padding:10px 10px 10px 40px;margin-bottom:8px;background:var(--green-soft);border-radius:12px;font-size:14px;line-height:1.4}
+  ol.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:8px;top:9px;width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+  /* Quiz status */
+  .status{font-size:14px;font-weight:700;text-align:center;padding:10px;border-radius:12px;margin-bottom:12px;background:var(--green-soft);color:var(--green-dk);min-height:20px}
+  .status.ok{background:#dff3e7;color:var(--green-ok)}
+  .status.bad{background:#fbe4de;color:var(--red)}
+  /* Flashcard */
+  .flash{perspective:1200px;margin-bottom:14px}
+  .flash-inner{position:relative;width:100%;min-height:200px;transition:transform .5s;transform-style:preserve-3d;cursor:pointer}
+  .flash.flipped .flash-inner{transform:rotateY(180deg)}
+  .flash-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+  .flash-front{background:linear-gradient(160deg,var(--green),var(--green-md));color:#fff}
+  .flash-front .term{font-size:24px;font-weight:800}
+  .flash-front .hint{font-size:12px;color:var(--gold-lt);margin-top:12px}
+  .flash-back{background:var(--card);color:var(--ink);transform:rotateY(180deg)}
+  .flash-back .def{font-size:16px;line-height:1.5}
+  .flash-back .t2{font-size:13px;font-weight:800;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+  .counter{text-align:center;font-size:13px;color:var(--muted);margin-bottom:10px}
+  /* MC quiz */
+  .q-prompt{font-size:16px;font-weight:600;line-height:1.4;margin-bottom:14px;background:var(--card);padding:16px;border-radius:14px;box-shadow:var(--shadow)}
+  .q-prompt .tag{display:block;font-size:11px;color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .opt{width:100%;text-align:left;background:var(--card);border:2px solid var(--green-soft);border-radius:12px;padding:14px;font-size:15px;font-weight:600;margin-bottom:10px;cursor:pointer;color:var(--ink);transition:.12s}
+  .opt:active{transform:scale(.99)}
+  .opt.correct{background:#dff3e7;border-color:var(--green-ok);color:var(--green-ok)}
+  .opt.wrong{background:#fbe4de;border-color:var(--red);color:var(--red)}
+  .opt:disabled{cursor:default}
+  /* Patterns grid */
+  .pat{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+  .pat h3{margin:0 0 2px;font-size:16px;color:var(--green-dk)}
+  .pat .cue{font-size:13px;color:var(--ink);line-height:1.45;margin-top:8px}
+  .pat svg{width:100%;height:auto;background:#eef4ee;border-radius:10px}
+  /* Builder */
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;font-weight:700;color:var(--green-dk);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:12px;border:2px solid var(--green-soft);border-radius:12px;font-size:15px;background:#fff;color:var(--ink);font-family:inherit}
+  .hintbar{font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px}
+  /* Bottom nav */
+  nav{
+    position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;
+    background:#fff;border-top:1px solid #e6ddc9;
+    display:flex;justify-content:space-around;
+    padding:6px 4px calc(6px + var(--safe-bot));z-index:30;box-shadow:0 -3px 14px rgba(20,64,43,.07);
+  }
+  nav button{
+    background:none;border:none;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 2px;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;border-radius:10px;
+  }
+  nav button svg{width:23px;height:23px}
+  nav button.active{color:var(--green-dk)}
+  nav button.active svg{stroke:var(--green-dk)}
+  nav button svg{stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  /* Onboarding overlay */
+  .overlay{position:fixed;inset:0;background:linear-gradient(160deg,var(--green-dk),var(--green));z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .3s ease}
+  .overlay.hidden{display:none}
+  .ob-card{background:var(--card);border-radius:22px;padding:28px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  .ob-card .shoe{width:64px;height:64px;margin-bottom:6px}
+  .ob-card h2{margin:6px 0 4px;color:var(--green-dk);font-size:22px}
+  .ob-card p{color:var(--muted);font-size:14px;margin:0 0 18px;line-height:1.4}
+  .ob-card input{width:100%;padding:14px;border:2px solid var(--green-soft);border-radius:12px;font-size:16px;text-align:center;margin-bottom:14px;font-family:inherit}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--green-dk);color:#fff;padding:11px 18px;border-radius:999px;font-size:14px;font-weight:700;z-index:50;box-shadow:var(--shadow);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1;padding:11px;border:none;border-radius:12px;background:var(--green-soft);color:var(--green-dk);font-weight:700;font-size:14px;cursor:pointer}
+  .tabs button.active{background:var(--green);color:#fff}
+  .scoreline{font-size:13px;color:var(--muted);text-align:center;margin-top:4px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <svg class="shoe" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M50 12c-16 0-27 12-27 30 0 13 5 26 9 36 2 5 7 8 12 8h0c2 0 4-2 4-4 0-2-1-3-3-4-3-2-6-4-7-8-3-9-6-19-6-28 0-13 7-20 18-20s18 7 18 20c0 9-3 19-6 28-1 4-4 6-7 8-2 1-3 2-3 4 0 2 2 4 4 4 5 0 10-3 12-8 4-10 9-23 9-36 0-18-11-30-27-30z" fill="#c9a227"/>
+        <circle cx="31" cy="78" r="3.4" fill="#c9a227"/><circle cx="69" cy="78" r="3.4" fill="#c9a227"/>
+        <circle cx="27" cy="62" r="3" fill="#c9a227"/><circle cx="73" cy="62" r="3" fill="#c9a227"/>
+        <circle cx="26" cy="46" r="3" fill="#c9a227"/><circle cx="74" cy="46" r="3" fill="#c9a227"/>
+      </svg>
+      <div>
+        <h1>Ring Ready</h1>
+        <div class="greet" id="greet"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- COURSES -->
+    <section class="view active" id="view-courses"></section>
+    <!-- SPATIAL -->
+    <section class="view" id="view-spatial"></section>
+    <!-- BUILDER -->
+    <section class="view" id="view-build"></section>
+    <!-- RING GEOGRAPHY -->
+    <section class="view" id="view-ring"></section>
+    <!-- TERMINOLOGY -->
+    <section class="view" id="view-terms"></section>
+    <!-- PATTERNS -->
+    <section class="view" id="view-patterns"></section>
+  </main>
+
+  <nav id="nav">
+    <button data-view="courses" class="active">
+      <svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/><circle cx="19" cy="19" r="1.6"/></svg>
+      Courses
+    </button>
+    <button data-view="spatial">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2.5 5.5L9 15l2.5-5.5z"/></svg>
+      Spatial
+    </button>
+    <button data-view="build">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Build
+    </button>
+    <button data-view="ring">
+      <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 12h18M12 6v12"/></svg>
+      Ring
+    </button>
+    <button data-view="terms">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 10h16"/></svg>
+      Terms
+    </button>
+    <button data-view="patterns">
+      <svg viewBox="0 0 24 24"><path d="M5 19c4-10 10-10 14 0"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></svg>
+      Patterns
+    </button>
+  </nav>
+</div>
+
+<!-- Onboarding -->
+<div class="overlay" id="onboard">
+  <div class="ob-card">
+    <svg class="shoe" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 12c-16 0-27 12-27 30 0 13 5 26 9 36 2 5 7 8 12 8h0c2 0 4-2 4-4 0-2-1-3-3-4-3-2-6-4-7-8-3-9-6-19-6-28 0-13 7-20 18-20s18 7 18 20c0 9-3 19-6 28-1 4-4 6-7 8-2 1-3 2-3 4 0 2 2 4 4 4 5 0 10-3 12-8 4-10 9-23 9-36 0-18-11-30-27-30z" fill="#c9a227"/>
+      <circle cx="31" cy="78" r="3.4" fill="#c9a227"/><circle cx="69" cy="78" r="3.4" fill="#c9a227"/>
+      <circle cx="27" cy="62" r="3" fill="#c9a227"/><circle cx="73" cy="62" r="3" fill="#c9a227"/>
+      <circle cx="26" cy="46" r="3" fill="#c9a227"/><circle cx="74" cy="46" r="3" fill="#c9a227"/>
+    </svg>
+    <h2>Welcome to Ring Ready</h2>
+    <p>Your pocket coach for finding your way around the show ring — courses, lines, distances, and terms. What's your name?</p>
+    <input id="nameInput" type="text" placeholder="Your name" autocomplete="off" maxlength="20" />
+    <button class="btn gold" id="startBtn">Let's ride 🐴</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================ Ring geometry ============================ */
+const RING = {x0:20,y0:20,x1:340,y1:220};
+const VB = "0 0 360 240";
+
+/* ============================ Data: courses ============================ */
+const COURSES = [
+  {
+    id:"classic", name:"Hunter Classic", level:"2'6\" Hunters",
+    jumps:[
+      {n:1,x:115,y:185},{n:2,x:245,y:185},
+      {n:3,x:235,y:150},{n:4,x:140,y:95},
+      {n:5,x:115,y:55},{n:6,x:245,y:55},
+      {n:7,x:235,y:90},{n:8,x:140,y:150}
+    ],
+    path:[[60,150],[115,185],[245,185],[305,178],[308,150],[235,150],[140,95],[78,82],[92,55],[115,55],[245,55],[305,62],[306,92],[235,90],[140,150],[88,165]],
+    steps:[
+      "Pick up the canter and ride a smooth opening circle to set your pace.",
+      "Fences 1 & 2 — the outside line down the near rail. Ride forward in a steady rhythm.",
+      "Turn right and roll back across the diagonal line, 3 to 4.",
+      "Turn left to the far outside line, 5 & 6.",
+      "Bend right to the final diagonal line, 7 to 8.",
+      "Finish with a closing circle, then walk on a long rein."
+    ]
+  },
+  {
+    id:"shortstirrup", name:"Short Stirrup Starter", level:"2' Short Stirrup",
+    jumps:[
+      {n:1,x:115,y:185},{n:2,x:245,y:185},
+      {n:3,x:115,y:55},{n:4,x:245,y:55},
+      {n:5,x:235,y:150},{n:6,x:140,y:95}
+    ],
+    path:[[60,150],[115,185],[245,185],[305,178],[306,118],[305,62],[245,55],[115,55],[70,70],[85,150],[235,150],[140,95],[80,82]],
+    steps:[
+      "Open with a relaxed circle at the trot, then pick up your canter.",
+      "Fences 1 & 2 — outside line along the near rail, count an even rhythm.",
+      "Turn up the far side for the outside line, 3 & 4.",
+      "Cross the middle on the diagonal line, 5 to 6.",
+      "Quiet closing circle and a pat for your pony."
+    ]
+  },
+  {
+    id:"medal", name:"Equitation Medal", level:"2'9\" Equitation",
+    jumps:[
+      {n:1,x:115,y:185},{n:2,x:245,y:185},
+      {n:3,x:235,y:150},{n:4,x:140,y:95},
+      {n:5,x:180,y:55},
+      {n:6,x:245,y:120},{n:7,x:115,y:120},
+      {n:8,x:180,y:185}
+    ],
+    path:[[60,150],[115,185],[245,185],[305,175],[300,150],[235,150],[140,95],[110,70],[180,55],[250,70],[290,120],[245,120],[115,120],[90,150],[120,185],[180,185],[230,180]],
+    steps:[
+      "Trot in, halt and salute the judge, then move off at the canter.",
+      "Fences 1 & 2 — outside line, show an even, balanced pace.",
+      "Rollback right to the diagonal line, 3 to 4.",
+      "Sit up the centerline to the single, fence 5.",
+      "Bending line across the middle, 6 to 7 — count your strides.",
+      "Finish straight to the single at 8, then closing circle and halt."
+    ]
+  },
+  {
+    id:"handy", name:"Handy Hunter", level:"3' Hunters",
+    jumps:[
+      {n:1,x:115,y:185},{n:2,x:245,y:185},
+      {n:3,x:235,y:90},{n:4,x:130,y:150},
+      {n:5,x:115,y:55},
+      {n:6,x:245,y:55},
+      {n:7,x:235,y:150},{n:8,x:130,y:95}
+    ],
+    path:[[60,150],[115,185],[245,185],[305,170],[300,90],[235,90],[130,150],[78,120],[90,55],[115,55],[180,40],[245,55],[300,70],[305,150],[235,150],[130,95],[78,90]],
+    steps:[
+      "Opening circle to find a forward hunter pace.",
+      "Fences 1 & 2 — outside line down the near rail.",
+      "Turn right and ride the diagonal line, 3 to 4.",
+      "Inside rollback turn to the single, fence 5 — show your handiness.",
+      "Across to the single at 6, stay balanced through the turn.",
+      "Final diagonal line, 7 to 8, then a strong closing circle."
+    ]
+  }
+];
+
+/* ============================ Data: terminology ============================ */
+const TERMS = [
+  {t:"Posting Diagonal", d:"At the trot, you rise and sit with the horse's outside front leg. Easy way to remember: “rise and fall with the leg on the wall.”"},
+  {t:"Lead", d:"At the canter, the pair of legs (front and hind) on one side reach farther forward. The horse is on the “left lead” or “right lead.”"},
+  {t:"Correct Lead", d:"Cantering on the lead that matches your direction — the inside front leg leads. Tracking right = right lead; tracking left = left lead."},
+  {t:"Flying Change", d:"Switching canter leads in the air, during the moment of suspension, without breaking to a trot or walk."},
+  {t:"Simple Change", d:"Changing leads by coming back to a walk (or a few trot steps) for a stride or two, then picking up the new lead."},
+  {t:"Pace", d:"How fast and forward the horse is going — the speed and energy of the gait. A good hunter pace is even and steady."},
+  {t:"Stride", d:"One full cycle of the horse's legs. A horse's canter stride is about 12 feet, which is how distances between jumps are measured."},
+  {t:"Distance", d:"The take-off spot in front of a jump, and the number of strides between two jumps. A good distance lets the horse leave the ground smoothly."},
+  {t:"Outside Line", d:"Two jumps set in a straight line along the long rail (outside) of the ring, ridden one after the other."},
+  {t:"Diagonal Line", d:"Two jumps set on a diagonal across the middle of the ring, ridden as a line from corner toward corner."},
+  {t:"Single", d:"One jump on its own that is not part of a line — ridden by itself."},
+  {t:"Bending Line", d:"Two jumps that aren't in a straight line, so you ride a gentle curve (a bend) between them to meet each one straight."},
+  {t:"Opening Circle", d:"A circle you ride at the start, before fence 1, to establish your pace and rhythm. Also called the courtesy circle."},
+  {t:"Closing Circle", d:"A circle after the last fence to finish smoothly, balance the horse, and come back to a trot or walk."},
+  {t:"Hunter", d:"A show horse judged on manners, smooth movement, and a pleasant, even way of jumping — it should look easy and relaxed."},
+  {t:"Course", d:"The set order of jumps you ride. You must take them in the correct numbered sequence."},
+  {t:"Course Walk", d:"Walking the course on foot before you ride, to plan your track, find your lines, and count the strides."},
+  {t:"Under Saddle / Flat", d:"A class with no jumping — the horse is judged at the walk, trot, and canter on the flat."},
+  {t:"Manners", d:"How well-behaved and obedient the horse is — quiet, willing, and easy to ride. Very important for hunters."},
+  {t:"Way of Going", d:"The overall quality of how the horse moves — its rhythm, balance, and smoothness across the gaits."}
+];
+
+/* ============================ Helpers ============================ */
+const $ = sel => document.querySelector(sel);
+const el = id => document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+let toastTimer;
+function toast(msg){
+  const t = el('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+/* localStorage */
+function getName(){return localStorage.getItem('rr_name')||'';}
+function setName(n){localStorage.setItem('rr_name',n);}
+function getSaved(){try{return JSON.parse(localStorage.getItem('rr_courses')||'[]');}catch(e){return [];}}
+function setSaved(a){localStorage.setItem('rr_courses',JSON.stringify(a));}
+function allCourses(){return COURSES.concat(getSaved());}
+
+/* ---- SVG building blocks ---- */
+function ringFrameSVG(opts){
+  opts = opts||{};
+  let s = `<rect class="ring-foot" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`;
+  if(opts.center) s += `<line class="gline dash" x1="${RING.x0}" y1="120" x2="${RING.x1}" y2="120"/>`;
+  if(opts.quarter){
+    s += `<line class="gline dash gold" x1="${RING.x0}" y1="70" x2="${RING.x1}" y2="70"/>`;
+    s += `<line class="gline dash gold" x1="${RING.x0}" y1="170" x2="${RING.x1}" y2="170"/>`;
+  }
+  if(opts.diag){
+    s += `<line class="gline dash" x1="${RING.x0}" y1="${RING.y0}" x2="${RING.x1}" y2="${RING.y1}"/>`;
+    s += `<line class="gline dash" x1="${RING.x1}" y1="${RING.y0}" x2="${RING.x0}" y2="${RING.y1}"/>`;
+  }
+  s += `<rect class="rail" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`;
+  if(opts.gate) s += gateSVG();
+  return s;
+}
+/* Fixed in-gate reference on the bottom rail (where horses enter) */
+function gateSVG(){
+  const y=RING.y1, x1=130, x2=172;
+  return `<rect x="${x1}" y="${y-3}" width="${x2-x1}" height="6" fill="#eef4ee"/>`
+    + `<line x1="${x1}" y1="${y-7}" x2="${x1}" y2="${y+7}" stroke="#c9a227" stroke-width="4" stroke-linecap="round"/>`
+    + `<line x1="${x2}" y1="${y-7}" x2="${x2}" y2="${y+7}" stroke="#c9a227" stroke-width="4" stroke-linecap="round"/>`
+    + `<text class="lbl" x="${(x1+x2)/2}" y="${y+16}" text-anchor="middle">In-gate</text>`;
+}
+
+/* Catmull-Rom smoothed path */
+function smoothD(pts){
+  if(pts.length<2) return "";
+  let d = `M ${pts[0][0]} ${pts[0][1]}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||pts[i+1];
+    const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+    const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+}
+
+/* direction (unit) for jump i based on neighbours */
+function jumpDir(jumps,i){
+  const a = jumps[i-1]||jumps[i], b = jumps[i+1]||jumps[i];
+  let dx=b.x-a.x, dy=b.y-a.y; const m=Math.hypot(dx,dy)||1;
+  return [dx/m,dy/m];
+}
+function poleFor(j,dir,cls){
+  const L=13; const px=-dir[1]*L, py=dir[0]*L;
+  return `<line class="pole ${cls||''}" x1="${(j.x-px).toFixed(1)}" y1="${(j.y-py).toFixed(1)}" x2="${(j.x+px).toFixed(1)}" y2="${(j.y+py).toFixed(1)}"/>`;
+}
+function badge(j,n){
+  return `<circle class="badge-c" cx="${j.x}" cy="${j.y}" r="9"/><text class="badge-t" x="${j.x}" y="${j.y}">${n}</text>`;
+}
+
+/* Build a full course study diagram */
+function courseStudySVG(c){
+  const path = c.path || c.jumps.map(j=>[j.x,j.y]);
+  let s = `<svg class="ring" viewBox="${VB}"><defs><marker id="arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2d6a4a"/></marker></defs>`;
+  s += ringFrameSVG({gate:true});
+  s += `<path class="track" marker-end="url(#arr)" d="${smoothD(path)}"/>`;
+  s += `<circle class="startdot" cx="${path[0][0]}" cy="${path[0][1]}" r="4"/>`;
+  s += `<text class="lbl" x="${path[0][0]-4}" y="${path[0][1]-8}">start</text>`;
+  c.jumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(c.jumps,i)) + badge(j,j.n); });
+  s += `</svg>`;
+  return s;
+}
+
+/* ============================ Router ============================ */
+function show(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  el('view-'+view).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('#nav button').forEach(b=>{
+  b.addEventListener('click',()=>{ const v=b.dataset.view; renderView(v); show(v); });
+});
+function renderView(v){
+  if(v==='courses') renderCourses();
+  if(v==='spatial') renderSpatial();
+  if(v==='build') renderBuilder();
+  if(v==='ring') renderRing();
+  if(v==='terms') renderTerms();
+  if(v==='patterns') renderPatterns();
+}
+
+/* ============================ COURSES section ============================ */
+function renderCourses(){
+  const saved = getSaved();
+  let h = `<h2 class="title">Course Memorizer</h2><p class="sub">Pick a course: study it, trace the whole track with your finger, then quiz the order from memory.</p>`;
+  h += COURSES.map((c,i)=>courseCardHTML(c,i+1,false)).join('');
+  if(saved.length){
+    h += `<p class="sub" style="margin-top:18px">Your saved courses</p>`;
+    h += saved.map((c,i)=>courseCardHTML(c,'★',true,i)).join('');
+  }
+  el('view-courses').innerHTML = h;
+  document.querySelectorAll('#view-courses .course-card').forEach(card=>{
+    card.addEventListener('click',()=>openCourse(card.dataset.cid));
+  });
+}
+function courseCardHTML(c,badgeTxt,isSaved,savedIdx){
+  return `<div class="card course-card" data-cid="${c.id}">
+    <div class="badge">${badgeTxt}</div>
+    <div class="meta"><div class="nm">${esc(c.name)}</div>
+      <div class="lv">${esc(c.level||'Custom')} · ${c.jumps.length} jumps ${isSaved?'<span class="pill saved">SAVED</span>':''}</div></div>
+    <div class="chev">›</div>
+  </div>`;
+}
+function findCourse(id){return allCourses().find(c=>c.id===id);}
+
+function openCourse(id){
+  const c = findCourse(id); if(!c) return;
+  const isSaved = !COURSES.includes(c);
+  let h = `<button class="back" id="bk">‹ All courses</button>`;
+  h += `<h2 class="title">${esc(c.name)}</h2><p class="sub">${esc(c.level||'Custom')} · ${c.jumps.length} jumps</p>`;
+  h += `<div class="tabs"><button id="tab-study" class="active">📖 Study</button><button id="tab-trace">✏️ Trace</button><button id="tab-quiz">🎯 Order</button></div>`;
+  h += `<div id="course-body"></div>`;
+  if(isSaved){ h += `<button class="btn ghost sm" id="delBtn" style="margin-top:10px">Delete this course</button>`; }
+  el('view-courses').innerHTML = h;
+  el('bk').addEventListener('click',renderCourses);
+  el('tab-study').addEventListener('click',()=>{setTab('study');renderStudy(c);});
+  el('tab-trace').addEventListener('click',()=>{setTab('trace');renderTrace(c);});
+  el('tab-quiz').addEventListener('click',()=>{setTab('quiz');renderQuiz(c);});
+  if(isSaved) el('delBtn').addEventListener('click',()=>{
+    const saved=getSaved().filter(x=>x.id!==c.id); setSaved(saved); toast('Course deleted'); renderCourses();
+  });
+  renderStudy(c);
+}
+function setTab(which){
+  el('tab-study').classList.toggle('active',which==='study');
+  el('tab-trace').classList.toggle('active',which==='trace');
+  el('tab-quiz').classList.toggle('active',which==='quiz');
+}
+function renderStudy(c){
+  const steps = c.steps || c.jumps.map((j,i)=> i===0?`Open with a circle, then ride to fence 1.`:`Continue to fence ${j.n}.`);
+  let h = `<div class="ringwrap">${courseStudySVG(c)}</div>`;
+  h += `<div class="card"><strong style="color:var(--green-dk)">Ride it like this</strong><ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>`;
+  el('course-body').innerHTML = h;
+}
+
+/* Quiz: tap jumps in order */
+function renderQuiz(c){
+  let h = `<div class="status" id="qstatus">Tap the jumps in the correct order. Start with fence 1.</div>`;
+  h += `<div class="ringwrap"><svg class="ring" viewBox="${VB}" id="qsvg">`;
+  h += ringFrameSVG({gate:true});
+  c.jumps.forEach((j,i)=>{ h += `<g id="qj-${i}">`+poleFor(j,jumpDir(c.jumps,i),'dim')+`<circle cx="${j.x}" cy="${j.y}" r="11" fill="transparent"/></g>`; });
+  h += `</svg></div>`;
+  h += `<div class="btn-row"><button class="btn ghost" id="qreset">Restart</button><button class="btn gold" id="qpeek">Show me</button></div>`;
+  h += `<div class="scoreline" id="qscore"></div>`;
+  el('course-body').innerHTML = h;
+
+  let expected = 0; let wrongs = 0; let done=false;
+  const svg = el('qsvg');
+  function setStatus(msg,cls){const s=el('qstatus');s.textContent=msg;s.className='status'+(cls?' '+cls:'');}
+  function reveal(i){
+    const j=c.jumps[i]; const g=el('qj-'+i);
+    g.querySelector('.pole').classList.remove('dim');
+    g.insertAdjacentHTML('beforeend', badge(j,j.n));
+  }
+  svg.addEventListener('click',(e)=>{
+    if(done) return;
+    const pt = svgPoint(svg,e);
+    // nearest jump
+    let best=-1,bd=1e9;
+    c.jumps.forEach((j,i)=>{const d=Math.hypot(j.x-pt.x,j.y-pt.y); if(d<bd){bd=d;best=i;}});
+    if(best<0||bd>34) return; // too far from any jump
+    if(best===expected){
+      reveal(best); expected++;
+      if(expected>=c.jumps.length){
+        done=true;
+        setStatus(wrongs===0?`Perfect round! Clear with no mistakes 🏆`:`Course complete! ${wrongs} wrong tap${wrongs===1?'':'s'}.`, 'ok');
+      }else{
+        setStatus(`Nice — fence ${best+1}! Now find fence ${expected+1}.`,'ok');
+      }
+    }else{
+      wrongs++;
+      const correctN = c.jumps.find((j,idx)=>idx===expected).n;
+      setStatus(`Not yet — that's fence ${c.jumps[best].n}. You need fence ${correctN} next.`,'bad');
+    }
+    el('qscore').textContent = `Progress: ${expected}/${c.jumps.length} · Wrong taps: ${wrongs}`;
+  });
+  el('qreset').addEventListener('click',()=>renderQuiz(c));
+  el('qpeek').addEventListener('click',()=>{setTab('study');renderStudy(c);});
+}
+
+function svgPoint(svg,evt){
+  const pt = svg.createSVGPoint();
+  const src = (evt.touches&&evt.touches[0])||(evt.changedTouches&&evt.changedTouches[0])||evt;
+  pt.x = src.clientX; pt.y = src.clientY;
+  const ctm = svg.getScreenCTM();
+  return ctm ? pt.matrixTransform(ctm.inverse()) : {x:0,y:0};
+}
+
+/* Trace the track: draw the whole riding path with a finger */
+function renderTrace(c){
+  const ideal = c.path || c.jumps.map(j=>[j.x,j.y]);
+  let h = `<div class="status" id="tstatus">Press and drag to ride the whole track — through every fence in order, the way you'd ride it.</div>`;
+  h += `<div class="ringwrap"><svg class="ring trace" viewBox="${VB}" id="tsvg">`;
+  h += ringFrameSVG({gate:true});
+  h += `<circle class="startdot" cx="${ideal[0][0]}" cy="${ideal[0][1]}" r="4"/>`;
+  h += `<text class="lbl" x="${ideal[0][0]-4}" y="${ideal[0][1]-8}">start</text>`;
+  c.jumps.forEach((j,i)=>{ h += poleFor(j,jumpDir(c.jumps,i),'faint'); h += `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="9"/><text class="badge-t" x="${j.x}" y="${j.y}">${j.n}</text>`; });
+  h += `<path class="ideal" id="tideal" style="display:none" d="${smoothD(ideal)}"/>`;
+  h += `<path class="tdraw" id="tdraw" d=""/>`;
+  h += `</svg></div>`;
+  h += `<div class="btn-row"><button class="btn ghost" id="tclear">Clear</button><button class="btn gold" id="tshow">Show ideal track</button></div>`;
+  h += `<div class="scoreline" id="tscore"></div>`;
+  el('course-body').innerHTML = h;
+
+  const svg = el('tsvg'), draw = el('tdraw');
+  let drawing=false, pts=[];
+  function setStatus(m,cls){const s=el('tstatus');s.textContent=m;s.className='status'+(cls?' '+cls:'');}
+  function start(e){ e.preventDefault(); drawing=true; pts=[]; add(e); }
+  function add(e){ if(!drawing) return; const p=svgPoint(svg,e); pts.push([p.x,p.y]); draw.setAttribute('d', smoothD(pts)); }
+  function end(){ if(!drawing) return; drawing=false; evaluate(); }
+  function evaluate(){
+    if(pts.length<6){ setStatus('Draw your whole track around the ring with your finger.'); return; }
+    // greedy in-order coverage of fences
+    let expected=0;
+    for(const p of pts){
+      if(expected>=c.jumps.length) break;
+      const j=c.jumps[expected];
+      if(Math.hypot(j.x-p[0],j.y-p[1])<26) expected++;
+    }
+    const total=c.jumps.length;
+    if(expected===total){
+      setStatus(`That's the whole track — all ${total} fences in order! Tap “Show ideal track” to compare your route.`,'ok');
+    }else{
+      setStatus(`You rode ${expected} of ${total} fences in order. Next you needed fence ${expected+1} — keep your line smooth and ride right through it.`,'bad');
+    }
+    el('tscore').textContent = `Fences ridden in order: ${expected}/${total}`;
+  }
+  svg.addEventListener('pointerdown',start);
+  svg.addEventListener('pointermove',add);
+  svg.addEventListener('pointerup',end);
+  svg.addEventListener('pointerleave',end);
+  // touch fallback for browsers without pointer events
+  svg.addEventListener('touchstart',start,{passive:false});
+  svg.addEventListener('touchmove',e=>{e.preventDefault();add(e);},{passive:false});
+  svg.addEventListener('touchend',end);
+  el('tclear').addEventListener('click',()=>{pts=[];draw.setAttribute('d','');el('tideal').style.display='none';el('tscore').textContent='';setStatus('Press and drag to ride the whole track — through every fence in order, the way you\'d ride it.');});
+  el('tshow').addEventListener('click',()=>{const ti=el('tideal');ti.style.display=ti.style.display==='none'?'block':'none';});
+}
+
+/* ============================ BUILDER section ============================ */
+let buildJumps = [];
+function renderBuilder(){
+  let h = `<h2 class="title">Course Builder</h2><p class="sub">Tap the ring to drop jumps in order. Tap a jump again to remove it.</p>`;
+  h += `<div class="field"><label>Course name</label><input id="bname" type="text" placeholder="e.g. Friday Schooling" maxlength="28"></div>`;
+  h += `<div class="field"><label>Level</label><select id="blevel">
+      <option>2' Short Stirrup</option><option>2'3" Hunters</option><option>2'6" Hunters</option>
+      <option>2'9" Equitation</option><option>3' Hunters</option><option>Schooling</option></select></div>`;
+  h += `<div class="hintbar" id="bhint">0 jumps placed — tap inside the ring to start.</div>`;
+  h += `<div class="ringwrap"><svg class="ring" viewBox="${VB}" id="bsvg">${ringFrameSVG({center:true,gate:true})}<g id="bjumps"></g></svg></div>`;
+  h += `<div class="btn-row"><button class="btn ghost" id="bclear">Clear</button><button class="btn" id="bsave">Save course</button></div>`;
+  el('view-build').innerHTML = h;
+  buildJumps = [];
+  drawBuildJumps();
+  const svg = el('bsvg');
+  svg.addEventListener('click',(e)=>{
+    const pt = svgPoint(svg,e);
+    if(pt.x<RING.x0+6||pt.x>RING.x1-6||pt.y<RING.y0+6||pt.y>RING.y1-6) return;
+    // tap existing to remove
+    let best=-1,bd=1e9;
+    buildJumps.forEach((j,i)=>{const d=Math.hypot(j.x-pt.x,j.y-pt.y);if(d<bd){bd=d;best=i;}});
+    if(best>=0&&bd<20){
+      buildJumps.splice(best,1);
+      buildJumps.forEach((j,i)=>j.n=i+1);
+    }else{
+      buildJumps.push({n:buildJumps.length+1,x:Math.round(pt.x),y:Math.round(pt.y)});
+    }
+    drawBuildJumps();
+  });
+  el('bclear').addEventListener('click',()=>{buildJumps=[];drawBuildJumps();});
+  el('bsave').addEventListener('click',saveBuild);
+}
+function drawBuildJumps(){
+  const g = el('bjumps'); if(!g) return;
+  let s = '';
+  if(buildJumps.length>1) s += `<path class="track" d="${smoothD(buildJumps.map(j=>[j.x,j.y]))}"/>`;
+  buildJumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(buildJumps,i)) + badge(j,j.n); });
+  g.innerHTML = s;
+  el('bhint').textContent = buildJumps.length===0 ? '0 jumps placed — tap inside the ring to start.'
+    : `${buildJumps.length} jump${buildJumps.length===1?'':'s'} placed. Tap a jump to remove it.`;
+}
+function saveBuild(){
+  const name = (el('bname').value||'').trim();
+  if(!name){toast('Give your course a name first');el('bname').focus();return;}
+  if(buildJumps.length<2){toast('Add at least 2 jumps');return;}
+  const saved = getSaved();
+  const course = {
+    id:'u'+Date.now(),
+    name, level: el('blevel').value,
+    jumps: buildJumps.map((j,i)=>({n:i+1,x:j.x,y:j.y}))
+  };
+  saved.push(course); setSaved(saved);
+  toast('Saved! Find it in Courses');
+  buildJumps=[];
+  renderBuilder();
+}
+
+/* ============================ RING GEOGRAPHY section ============================ */
+function geoSVG(interactive,target){
+  let s = `<svg class="ring" viewBox="${VB}" id="gsvg">`;
+  s += `<rect class="ring-foot" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`;
+  // diagonals
+  s += line('diagonal',`<line class="gline dash" x1="${RING.x0}" y1="${RING.y0}" x2="${RING.x1}" y2="${RING.y1}"/>`,RING.x0,RING.y0,RING.x1,RING.y1,interactive);
+  s += line('diagonal',`<line class="gline dash" x1="${RING.x1}" y1="${RING.y0}" x2="${RING.x0}" y2="${RING.y1}"/>`,RING.x1,RING.y0,RING.x0,RING.y1,interactive);
+  // quarter lines
+  s += line('quarter line',`<line class="gline dash gold" x1="${RING.x0}" y1="70" x2="${RING.x1}" y2="70"/>`,RING.x0,70,RING.x1,70,interactive);
+  s += line('quarter line',`<line class="gline dash gold" x1="${RING.x0}" y1="170" x2="${RING.x1}" y2="170"/>`,RING.x0,170,RING.x1,170,interactive);
+  // centerline
+  s += line('centerline',`<line class="gline dash" x1="${RING.x0}" y1="120" x2="${RING.x1}" y2="120"/>`,RING.x0,120,RING.x1,120,interactive);
+  // rail (rectangle) — hit as 4 edges
+  s += `<rect class="rail" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`;
+  if(interactive){
+    s += `<rect class="hit" data-name="rail" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`;
+  }
+  if(!interactive){
+    s += `<text class="lbl" x="${RING.x0+6}" y="${RING.y0-6}">Rail</text>`;
+    s += `<text class="lbl" x="${RING.x1-72}" y="118">Centerline</text>`;
+    s += `<text class="lbl" x="26" y="66">Quarter line</text>`;
+    s += `<text class="lbl" x="26" y="166">Quarter line</text>`;
+    s += `<text class="lbl" x="120" y="40">Diagonal</text>`;
+  }
+  s += gateSVG();
+  s += `</svg>`;
+  return s;
+}
+function line(name,visible,x1,y1,x2,y2,interactive){
+  let s = visible;
+  if(interactive) s += `<line class="hit" data-name="${name}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  return s;
+}
+function renderRing(){
+  let h = `<h2 class="title">Ring Geography</h2><p class="sub">Know every line in the ring. These are the lines you'll use to plan your track.</p>`;
+  h += `<div class="ringwrap">${geoSVG(false)}</div>`;
+  h += `<div class="card"><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--ink)">
+    <li><strong>Rail</strong> — the fence around the outside of the ring.</li>
+    <li><strong>Centerline</strong> — runs straight down the middle, end to end.</li>
+    <li><strong>Quarter lines</strong> — halfway between the centerline and each rail.</li>
+    <li><strong>Diagonals</strong> — corner to corner, used for diagonal lines and changes.</li></ul></div>`;
+  h += `<button class="btn gold" id="goLineQuiz">🎯 Tap-the-line quiz</button>`;
+  el('view-ring').innerHTML = h;
+  el('goLineQuiz').addEventListener('click',renderLineQuiz);
+}
+const LINE_TARGETS = ['rail','centerline','quarter line','diagonal'];
+function renderLineQuiz(){
+  let order = LINE_TARGETS.slice(); shuffle(order);
+  let idx=0, correct=0, answered=false;
+  function draw(){
+    let h = `<button class="back" id="bk">‹ Ring geography</button>`;
+    h += `<div class="status" id="lstatus">Tap the <strong>${order[idx]}</strong></div>`;
+    h += `<div class="ringwrap">${geoSVG(true)}</div>`;
+    h += `<div class="scoreline">Question ${idx+1} of ${order.length} · Score ${correct}</div>`;
+    el('view-ring').innerHTML = h;
+    el('bk').addEventListener('click',renderRing);
+    const svg = el('gsvg');
+    svg.querySelectorAll('.hit').forEach(hit=>{
+      hit.addEventListener('click',()=>{
+        if(answered) return; answered=true;
+        const name = hit.dataset.name;
+        const want = order[idx];
+        const ls = el('lstatus');
+        if(name===want){correct++;ls.className='status ok';ls.innerHTML=`Yes! That's the ${want}. ✔`;}
+        else {ls.className='status bad';ls.innerHTML=`That's the ${name}. The ${want} is the one you wanted.`;}
+        setTimeout(()=>{
+          idx++; answered=false;
+          if(idx>=order.length){ finishLineQuiz(correct,order.length); }
+          else draw();
+        },1200);
+      });
+    });
+  }
+  draw();
+}
+function finishLineQuiz(correct,total){
+  let h = `<button class="back" id="bk">‹ Ring geography</button>`;
+  h += `<div class="card" style="text-align:center"><div style="font-size:40px">${correct===total?'🏆':'🐴'}</div>
+    <h2 class="title" style="margin-top:6px">You got ${correct} / ${total}</h2>
+    <p class="sub">${correct===total?'Perfect! You know your ring lines.':'Great practice — run it again to ace it.'}</p>
+    <button class="btn gold" id="again">Try again</button></div>`;
+  el('view-ring').innerHTML = h;
+  el('bk').addEventListener('click',renderRing);
+  el('again').addEventListener('click',renderLineQuiz);
+}
+
+/* ============================ TERMINOLOGY section ============================ */
+let flashIdx = 0, flashOrder = [];
+function renderTerms(){
+  let h = `<h2 class="title">Terminology</h2><p class="sub">Flip the flashcards to learn, then test yourself.</p>`;
+  h += `<div class="tabs"><button id="t-cards" class="active">🗂 Flashcards</button><button id="t-quiz">🎯 Quiz</button></div>`;
+  h += `<div id="terms-body"></div>`;
+  el('view-terms').innerHTML = h;
+  el('t-cards').addEventListener('click',()=>{el('t-cards').classList.add('active');el('t-quiz').classList.remove('active');renderFlash();});
+  el('t-quiz').addEventListener('click',()=>{el('t-quiz').classList.add('active');el('t-cards').classList.remove('active');renderTermQuiz();});
+  flashOrder = TERMS.map((_,i)=>i); flashIdx=0;
+  renderFlash();
+}
+function renderFlash(){
+  const i = flashOrder[flashIdx]; const term = TERMS[i];
+  let h = `<div class="counter">Card ${flashIdx+1} of ${TERMS.length}</div>`;
+  h += `<div class="flash" id="flash"><div class="flash-inner">
+    <div class="flash-face flash-front"><div class="term">${esc(term.t)}</div><div class="hint">tap to flip</div></div>
+    <div class="flash-face flash-back"><div class="t2">${esc(term.t)}</div><div class="def">${esc(term.d)}</div></div>
+  </div></div>`;
+  h += `<div class="btn-row"><button class="btn ghost" id="fprev">‹ Prev</button><button class="btn ghost" id="fshuf">Shuffle</button><button class="btn" id="fnext">Next ›</button></div>`;
+  el('terms-body').innerHTML = h;
+  el('flash').addEventListener('click',()=>el('flash').classList.toggle('flipped'));
+  el('fprev').addEventListener('click',()=>{flashIdx=(flashIdx-1+TERMS.length)%TERMS.length;renderFlash();});
+  el('fnext').addEventListener('click',()=>{flashIdx=(flashIdx+1)%TERMS.length;renderFlash();});
+  el('fshuf').addEventListener('click',()=>{shuffle(flashOrder);flashIdx=0;renderFlash();toast('Shuffled!');});
+}
+function renderTermQuiz(){
+  let order = TERMS.map((_,i)=>i); shuffle(order); order=order.slice(0,10);
+  let idx=0, score=0, answered=false;
+  function draw(){
+    const ti = order[idx]; const term = TERMS[ti];
+    // options: correct term + 3 distractors
+    let opts=[ti]; const pool=TERMS.map((_,i)=>i).filter(i=>i!==ti); shuffle(pool);
+    opts=opts.concat(pool.slice(0,3)); shuffle(opts);
+    let h = `<div class="counter">Question ${idx+1} of ${order.length} · Score ${score}</div>`;
+    h += `<div class="q-prompt"><span class="tag">Which term means…</span>${esc(term.d)}</div>`;
+    h += opts.map(o=>`<button class="opt" data-i="${o}">${esc(TERMS[o].t)}</button>`).join('');
+    el('terms-body').innerHTML = h;
+    answered=false;
+    el('terms-body').querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(answered) return; answered=true;
+        const chosen=+btn.dataset.i;
+        el('terms-body').querySelectorAll('.opt').forEach(b=>{
+          b.disabled=true;
+          if(+b.dataset.i===ti) b.classList.add('correct');
+          else if(b===btn) b.classList.add('wrong');
+        });
+        if(chosen===ti) score++;
+        setTimeout(()=>{ idx++; if(idx>=order.length) finishTermQuiz(score,order.length); else draw(); },1100);
+      });
+    });
+  }
+  draw();
+}
+function finishTermQuiz(score,total){
+  let h = `<div class="card" style="text-align:center"><div style="font-size:40px">${score===total?'🏆':(score>=total*0.7?'🌟':'🐴')}</div>
+    <h2 class="title" style="margin-top:6px">${score} / ${total} correct</h2>
+    <p class="sub">${score===total?'Flawless — you know your terms!':'Nice work — flip through the cards and try again.'}</p>
+    <button class="btn gold" id="tagain">Try again</button></div>`;
+  el('terms-body').innerHTML = h;
+  el('tagain').addEventListener('click',renderTermQuiz);
+}
+
+/* ============================ SPATIAL section ============================ */
+const UNIT_FT = 0.625; // ring interior (320 units) ≈ 200 ft
+const C_RING = {x:(RING.x0+RING.x1)/2, y:(RING.y0+RING.y1)/2};
+
+function renderSpatial(){
+  let h = `<h2 class="title">Spatial Skills</h2><p class="sub">Build your sense of the ring — where you are, which way you're going, and how far a line really is.</p>`;
+  h += `<div class="tabs"><button id="s-way" class="active">🧭 Which Way?</button><button id="s-stride">📏 Stride Counter</button></div>`;
+  h += `<div id="spatial-body"></div>`;
+  el('view-spatial').innerHTML = h;
+  el('s-way').addEventListener('click',()=>{el('s-way').classList.add('active');el('s-stride').classList.remove('active');renderWhichWay();});
+  el('s-stride').addEventListener('click',()=>{el('s-stride').classList.add('active');el('s-way').classList.remove('active');renderStrideCounter();});
+  renderWhichWay();
+}
+
+/* Rider marker (position dot + heading arrow) */
+function riderSVG(pos,heading){
+  const ax=pos[0]+heading[0]*26, ay=pos[1]+heading[1]*26;
+  const lx=pos[0]-heading[0]*8 - (heading[0]===0?14:0), ly=pos[1]-heading[1]*8 + (heading[1]===0? -10:0);
+  return `<line x1="${pos[0]}" y1="${pos[1]}" x2="${ax}" y2="${ay}" stroke="#14402b" stroke-width="3" marker-end="url(#rar)"/>`
+    + `<circle cx="${pos[0]}" cy="${pos[1]}" r="6" fill="#c0492f" stroke="#fff" stroke-width="2"/>`
+    + `<text class="lbl" x="${lx}" y="${ly}" text-anchor="middle">you</text>`;
+}
+function makeWhichWay(){
+  const rails=[
+    {pos:[rand(90,270),RING.y1-6], dirs:[[1,0],[-1,0]], long:true, side:'near'},
+    {pos:[rand(90,270),RING.y0+6], dirs:[[1,0],[-1,0]], long:true, side:'far'},
+    {pos:[RING.x0+6,rand(70,170)], dirs:[[0,1],[0,-1]], long:false},
+    {pos:[RING.x1-6,rand(70,170)], dirs:[[0,1],[0,-1]], long:false}
+  ];
+  const rail=rails[Math.floor(Math.random()*rails.length)];
+  const heading=rail.dirs[Math.floor(Math.random()*rail.dirs.length)];
+  const r=[rail.pos[0]-C_RING.x, rail.pos[1]-C_RING.y];
+  const cross = r[0]*heading[1] - r[1]*heading[0];
+  const trackingLeft = cross<0;
+  const types=['rein','inside'];
+  if(rail.long) types.push('near');
+  const type=types[Math.floor(Math.random()*types.length)];
+  let q,opts;
+  if(type==='rein'){
+    q="Which rein are you on?";
+    opts=[{label:'Left rein (tracking left)',correct:trackingLeft},{label:'Right rein (tracking right)',correct:!trackingLeft}];
+  }else if(type==='inside'){
+    q="Which side is the inside of the ring?";
+    opts=[{label:'On my left',correct:trackingLeft},{label:'On my right',correct:!trackingLeft}];
+  }else{
+    const near = rail.side==='near';
+    q="Which rail are you next to — the near rail (by the in-gate) or the far rail?";
+    opts=[{label:'Near rail (in-gate side)',correct:near},{label:'Far rail',correct:!near}];
+  }
+  return {pos:rail.pos,heading,q,opts:shuffle(opts.slice())};
+}
+function renderWhichWay(){
+  let total=8, idx=0, score=0, answered=false, cur=null;
+  function draw(){
+    cur=makeWhichWay();
+    let h = `<div class="counter">Question ${idx+1} of ${total} · Score ${score}</div>`;
+    h += `<div class="ringwrap"><svg class="ring" viewBox="${VB}"><defs><marker id="rar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#14402b"/></marker></defs>`;
+    h += ringFrameSVG({gate:true});
+    h += riderSVG(cur.pos,cur.heading);
+    h += `</svg></div>`;
+    h += `<div class="q-prompt"><span class="tag">You're riding the red arrow</span>${esc(cur.q)}</div>`;
+    h += cur.opts.map((o,i)=>`<button class="opt" data-i="${i}">${esc(o.label)}</button>`).join('');
+    h += `<div class="status" id="wstatus" style="display:none"></div>`;
+    el('spatial-body').innerHTML = h;
+    answered=false;
+    el('spatial-body').querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(answered) return; answered=true;
+        const chosen=cur.opts[+btn.dataset.i];
+        el('spatial-body').querySelectorAll('.opt').forEach((b,i)=>{
+          b.disabled=true;
+          if(cur.opts[i].correct) b.classList.add('correct');
+          else if(b===btn) b.classList.add('wrong');
+        });
+        const ws=el('wstatus'); ws.style.display='block';
+        if(chosen.correct){score++;ws.className='status ok';ws.textContent='Yes! 🐴';}
+        else {ws.className='status bad';ws.textContent='Look at the arrow — picture yourself in the saddle going that way.';}
+        setTimeout(()=>{ idx++; if(idx>=total) summary(); else draw(); },1200);
+      });
+    });
+  }
+  function summary(){
+    let h = `<div class="card" style="text-align:center"><div style="font-size:40px">${score===total?'🏆':(score>=6?'🌟':'🐴')}</div>
+      <h2 class="title" style="margin-top:6px">${score} / ${total}</h2>
+      <p class="sub">${score===total?'You always know where you are in the ring!':'Keep practicing — picture yourself riding the arrow each time.'}</p>
+      <button class="btn gold" id="wagain">Ride again</button></div>`;
+    el('spatial-body').innerHTML = h;
+    el('wagain').addEventListener('click',renderWhichWay);
+  }
+  draw();
+}
+
+/* Stride Counter — distance & stride feel */
+function renderStrideCounter(){
+  let total=6, idx=0, score=0, answered=false;
+  function draw(){
+    const n = 1+Math.floor(Math.random()*5); // 1..5 strides
+    const ft = 12*n + 12;
+    const units = ft / UNIT_FT;            // gap between jumps in svg units
+    const cx=180, topY=120-units/2, botY=120+units/2;
+    let options=[n-1,n,n+1,n+2].filter(v=>v>=1&&v<=7);
+    options=Array.from(new Set(options)); shuffle(options);
+    let h = `<div class="counter">Question ${idx+1} of ${total} · Score ${score}</div>`;
+    h += `<div class="hintbar">1 canter stride ≈ 12 feet</div>`;
+    h += `<div class="ringwrap"><svg class="ring" viewBox="${VB}" id="ssvg">`;
+    h += ringFrameSVG({gate:true});
+    h += `<g id="strideDots"></g>`;
+    h += poleFor({x:cx,y:topY},[0,1]) + badge({x:cx,y:topY},1);
+    h += poleFor({x:cx,y:botY},[0,1]) + badge({x:cx,y:botY},2);
+    h += `</svg></div>`;
+    h += `<div class="q-prompt"><span class="tag">Distance & stride feel</span>How many strides would you ride between fence 1 and fence 2?</div>`;
+    h += options.map(o=>`<button class="opt" data-n="${o}">${o} stride${o===1?'':'s'}</button>`).join('');
+    h += `<div class="status" id="sstatus" style="display:none"></div>`;
+    el('spatial-body').innerHTML = h;
+    answered=false;
+    el('spatial-body').querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(answered) return; answered=true;
+        const chosen=+btn.dataset.n;
+        el('spatial-body').querySelectorAll('.opt').forEach(b=>{
+          b.disabled=true;
+          if(+b.dataset.n===n) b.classList.add('correct');
+          else if(b===btn) b.classList.add('wrong');
+        });
+        // draw the strides
+        const dots=el('strideDots'); let ds='';
+        const start=topY+ (units/(n+1));
+        for(let k=1;k<=n;k++){ const y=topY + units*k/(n+1); ds+=`<circle cx="${cx}" cy="${y.toFixed(1)}" r="4.5" fill="#2d6a4a"/>`; }
+        dots.innerHTML=ds;
+        const ss=el('sstatus'); ss.style.display='block';
+        if(chosen===n){score++;ss.className='status ok';ss.textContent=`Right! ${ft} ft ≈ ${n} stride${n===1?'':'s'}. See the strides drawn out.`;}
+        else {ss.className='status bad';ss.textContent=`It's ${n} (about ${ft} ft). Each green dot is one canter stride.`;}
+        setTimeout(()=>{ idx++; if(idx>=total) summary(); else draw(); },1700);
+      });
+    });
+  }
+  function summary(){
+    let h = `<div class="card" style="text-align:center"><div style="font-size:40px">${score===total?'🏆':(score>=4?'🌟':'🐴')}</div>
+      <h2 class="title" style="margin-top:6px">${score} / ${total}</h2>
+      <p class="sub">${score===total?'Great eye for distance!':'Picture the 12-ft strides filling the line — you\'ll feel it.'}</p>
+      <button class="btn gold" id="sagain">Try again</button></div>`;
+    el('spatial-body').innerHTML = h;
+    el('sagain').addEventListener('click',renderStrideCounter);
+  }
+  draw();
+}
+function rand(a,b){return Math.round(a+Math.random()*(b-a));}
+
+/* ============================ PATTERNS section ============================ */
+function miniSVG(inner){return `<svg viewBox="0 0 240 150"><rect x="6" y="6" width="228" height="138" rx="10" fill="#eef4ee"/><rect x="6" y="6" width="228" height="138" rx="10" fill="none" stroke="#14402b" stroke-width="2.4"/>${inner}</svg>`;}
+function mPole(x,y,ang){const L=12;const r=ang*Math.PI/180;const dx=Math.cos(r)*L,dy=Math.sin(r)*L;return `<line x1="${x-dx}" y1="${y-dy}" x2="${x+dx}" y2="${y+dy}" stroke="#c9a227" stroke-width="5" stroke-linecap="round"/>`;}
+function mNum(x,y,n){return `<circle cx="${x}" cy="${y}" r="8" fill="#14402b"/><text x="${x}" y="${y}" fill="#fff" font-size="10" font-weight="800" text-anchor="middle" dominant-baseline="central">${n}</text>`;}
+function mTrack(d){return `<path d="${d}" fill="none" stroke="#2d6a4a" stroke-width="2.4" stroke-dasharray="6 5" stroke-linecap="round" marker-end="url(#pa)"/>`;}
+const PAT_DEFS = `<defs><marker id="pa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2d6a4a"/></marker></defs>`;
+function renderPatterns(){
+  const pats = [
+    {n:"Outside Line", cue:"Two jumps in a straight line along the rail. Ride straight, keep an even pace, and count the same number of strides every time.",
+     svg:miniSVG(PAT_DEFS+mTrack("M120 130 L120 25")+mPole(120,100,0)+mNum(105,100,1)+mPole(120,55,0)+mNum(105,55,2))},
+    {n:"Diagonal Line", cue:"Two jumps set across the ring corner-to-corner. Make your turn early so you meet the first jump straight, then ride through to the second.",
+     svg:miniSVG(PAT_DEFS+mTrack("M40 125 L200 35")+mPole(95,94,-29)+mNum(108,80,1)+mPole(150,64,-29)+mNum(163,50,2))},
+    {n:"Single", cue:"One jump on its own. Set up early, find a straight approach, and keep your eyes up past the fence.",
+     svg:miniSVG(PAT_DEFS+mTrack("M120 130 C120 90 120 90 120 40")+mPole(120,75,0)+mNum(138,75,1))},
+    {n:"Bending Line", cue:"The two jumps aren't straight in line. Ride a smooth curve between them so you meet each one straight — don't cut it sharp.",
+     svg:miniSVG(PAT_DEFS+mTrack("M70 130 C70 95 150 95 175 45")+mPole(70,100,0)+mNum(52,100,1)+mPole(168,62,-32)+mNum(182,50,2))},
+    {n:"Opening / Closing Circle", cue:"A circle before fence 1 to set your pace, and one after the last fence to finish smoothly. Make them round and balanced.",
+     svg:miniSVG(PAT_DEFS+`<circle cx="80" cy="75" r="40" fill="none" stroke="#2d6a4a" stroke-width="2.4" stroke-dasharray="6 5"/>`+mTrack("M118 70 L200 70")+mPole(170,70,90)+mNum(170,52,1)+`<text x="80" y="78" fill="#14402b" font-size="11" font-weight="700" text-anchor="middle">circle</text>`)}
+  ];
+  let h = `<h2 class="title">Practice Patterns</h2><p class="sub">The shapes that show up in every course. Learn the cue for each one.</p>`;
+  h += pats.map(p=>`<div class="pat"><h3>${p.n}</h3>${p.svg}<div class="cue">${esc(p.cue)}</div></div>`).join('');
+  el('view-patterns').innerHTML = h;
+}
+
+/* ============================ Utility ============================ */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ============================ Onboarding & init ============================ */
+function applyGreeting(){
+  const n=getName();
+  el('greet').textContent = n ? greetingFor(n) : '';
+}
+function greetingFor(n){
+  const hour = new Date().getHours();
+  const part = hour<12?'Morning':hour<17?'Afternoon':'Evening';
+  return `${part}, ${n} — ready to ride?`;
+}
+function init(){
+  const name=getName();
+  if(!name){
+    el('onboard').classList.remove('hidden');
+  }else{
+    el('onboard').classList.add('hidden');
+  }
+  applyGreeting();
+  renderCourses();
+}
+el('startBtn').addEventListener('click',()=>{
+  const v=(el('nameInput').value||'').trim();
+  if(!v){el('nameInput').focus();el('nameInput').placeholder='Please type your name';return;}
+  setName(v);
+  el('onboard').classList.add('hidden');
+  applyGreeting();
+  toast(`Welcome, ${v}! 🐴`);
+});
+el('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')el('startBtn').click();});
+
+init();
+
+/* ============================ Service worker ============================ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
