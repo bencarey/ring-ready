@@ -138,6 +138,14 @@
   .opt.correct{background:#dff3e7;border-color:var(--green-ok);color:var(--green-ok)}
   .opt.wrong{background:#fbe4de;border-color:var(--red);color:var(--red)}
   .opt:disabled{cursor:default}
+  /* Quiz result flash (fixed so it's always on-screen) */
+  .qflash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-bot) + 80px);width:calc(100% - 24px);max-width:456px;z-index:45;border-radius:14px;padding:13px 16px;box-shadow:0 8px 24px rgba(0,0,0,.22);font-size:16px;font-weight:800;text-align:center}
+  .qflash{animation:flashin .2s ease}
+  @keyframes flashin{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%)}}
+  .qflash.ok{background:#dff3e7;color:var(--green-ok);border:2px solid var(--green-ok)}
+  .qflash.bad{background:#fbe4de;color:var(--red);border:2px solid var(--red)}
+  .qflash .why{font-weight:600;color:var(--ink);margin-top:6px;font-size:14px;line-height:1.45}
+  .qflash .nextbtn{margin-top:11px;width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:800;font-size:15px;cursor:pointer}
   /* Patterns grid */
   .pat{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
   .pat h3{margin:0 0 2px;font-size:16px;color:var(--green-dk)}
@@ -423,6 +431,16 @@ let toastTimer;
 function toast(msg){
   const t = el('toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'),1800);
+}
+/* Quiz feedback: a quick green flash on right; on wrong, explain why and
+   wait for "Next" so the answer isn't skipped past. */
+function flashResult(correct, headline, why, onNext){
+  document.querySelectorAll('.qflash').forEach(e=>e.remove());
+  const fl=document.createElement('div'); fl.className='qflash '+(correct?'ok':'bad');
+  fl.innerHTML=`<div>${esc(headline)}</div>`+(why?`<div class="why">${esc(why)}</div>`:'')+(correct?'':`<button class="nextbtn">Next ▸</button>`);
+  document.body.appendChild(fl);
+  if(correct){ setTimeout(()=>{ fl.remove(); onNext(); }, 1050); }
+  else { fl.querySelector('.nextbtn').addEventListener('click',()=>{ fl.remove(); onNext(); }); }
 }
 
 /* localStorage */
@@ -1004,14 +1022,9 @@ function renderLineQuiz(){
         if(answered) return; answered=true;
         const name = hit.dataset.name;
         const want = order[idx];
-        const ls = el('lstatus');
-        if(name===want){correct++;ls.className='status ok';ls.innerHTML=`Yes! That's the ${want}. ✔`;}
-        else {ls.className='status bad';ls.innerHTML=`That's the ${name}. The ${want} is the one you wanted.`;}
-        setTimeout(()=>{
-          idx++; answered=false;
-          if(idx>=order.length){ finishLineQuiz(correct,order.length); }
-          else draw();
-        },1200);
+        const advance=()=>{ idx++; answered=false; if(idx>=order.length){ finishLineQuiz(correct,order.length); } else draw(); };
+        if(name===want){ correct++; flashResult(true,`Yes! That's the ${want}. ✔`,'',advance); }
+        else { flashResult(false,`That's the ${name}.`,`You wanted the ${want} — try to picture where it runs in the ring.`, advance); }
       });
     });
   }
@@ -1077,8 +1090,9 @@ function renderTermQuiz(){
           if(+b.dataset.i===ti) b.classList.add('correct');
           else if(b===btn) b.classList.add('wrong');
         });
-        if(chosen===ti) score++;
-        setTimeout(()=>{ idx++; if(idx>=order.length) finishTermQuiz(score,order.length); else draw(); },1100);
+        const advance=()=>{ idx++; if(idx>=order.length) finishTermQuiz(score,order.length); else draw(); };
+        if(chosen===ti){ score++; flashResult(true,'Correct! 🎉','',advance); }
+        else { flashResult(false, `It's “${TERMS[ti].t}”.`, TERMS[ti].d, advance); }
       });
     });
   }
@@ -1118,10 +1132,10 @@ function riderSVG(pos,heading){
 }
 function makeWhichWay(){
   const rails=[
-    {pos:[rand(90,270),RING.y1-6], dirs:[[1,0],[-1,0]], long:true, side:'near'},
-    {pos:[rand(90,270),RING.y0+6], dirs:[[1,0],[-1,0]], long:true, side:'far'},
-    {pos:[RING.x0+6,rand(70,170)], dirs:[[0,1],[0,-1]], long:false},
-    {pos:[RING.x1-6,rand(70,170)], dirs:[[0,1],[0,-1]], long:false}
+    {pos:[rand(95,265),RING.y1-22], dirs:[[1,0],[-1,0]], long:true, side:'near'},
+    {pos:[rand(95,265),RING.y0+22], dirs:[[1,0],[-1,0]], long:true, side:'far'},
+    {pos:[RING.x0+22,rand(72,168)], dirs:[[0,1],[0,-1]], long:false},
+    {pos:[RING.x1-22,rand(72,168)], dirs:[[0,1],[0,-1]], long:false}
   ];
   const rail=rails[Math.floor(Math.random()*rails.length)];
   const heading=rail.dirs[Math.floor(Math.random()*rail.dirs.length)];
@@ -1131,19 +1145,23 @@ function makeWhichWay(){
   const types=['rein','inside'];
   if(rail.long) types.push('near');
   const type=types[Math.floor(Math.random()*types.length)];
-  let q,opts;
+  let q,opts,why;
   if(type==='rein'){
     q="Which rein are you on?";
     opts=[{label:'Left rein (tracking left)',correct:trackingLeft},{label:'Right rein (tracking right)',correct:!trackingLeft}];
+    why = trackingLeft ? "Riding this way goes counter-clockwise around the ring — that's the left rein, tracking left."
+                       : "Riding this way goes clockwise around the ring — that's the right rein, tracking right.";
   }else if(type==='inside'){
     q="Which side is the inside of the ring?";
     opts=[{label:'On my left',correct:trackingLeft},{label:'On my right',correct:!trackingLeft}];
+    why = `You're on the ${trackingLeft?'left':'right'} rein, so the inside of the ring is on your ${trackingLeft?'left':'right'}.`;
   }else{
     const near = rail.side==='near';
     q="Which rail are you next to — the near rail (by the in-gate) or the far rail?";
     opts=[{label:'Near rail (in-gate side)',correct:near},{label:'Far rail',correct:!near}];
+    why = `The in-gate sits on the near rail, and you're riding along the ${near?'near':'far'} rail.`;
   }
-  return {pos:rail.pos,heading,q,opts:shuffle(opts.slice())};
+  return {pos:rail.pos,heading,q,opts:shuffle(opts.slice()),why};
 }
 function renderWhichWay(){
   let total=8, idx=0, score=0, answered=false, cur=null;
@@ -1156,7 +1174,6 @@ function renderWhichWay(){
     h += `</svg></div>`;
     h += `<div class="q-prompt"><span class="tag">You're riding the red arrow</span>${esc(cur.q)}</div>`;
     h += cur.opts.map((o,i)=>`<button class="opt" data-i="${i}">${esc(o.label)}</button>`).join('');
-    h += `<div class="status" id="wstatus" style="display:none"></div>`;
     el('spatial-body').innerHTML = h;
     answered=false;
     el('spatial-body').querySelectorAll('.opt').forEach(btn=>{
@@ -1168,10 +1185,9 @@ function renderWhichWay(){
           if(cur.opts[i].correct) b.classList.add('correct');
           else if(b===btn) b.classList.add('wrong');
         });
-        const ws=el('wstatus'); ws.style.display='block';
-        if(chosen.correct){score++;ws.className='status ok';ws.textContent='Yes! 🐴';}
-        else {ws.className='status bad';ws.textContent='Look at the arrow — picture yourself in the saddle going that way.';}
-        setTimeout(()=>{ idx++; if(idx>=total) summary(); else draw(); },1200);
+        const advance=()=>{ idx++; if(idx>=total) summary(); else draw(); };
+        if(chosen.correct){ score++; flashResult(true,'Yes! 🐴','',advance); }
+        else { flashResult(false, `The answer is “${cur.opts.find(o=>o.correct).label}”.`, cur.why, advance); }
       });
     });
   }
@@ -1207,7 +1223,6 @@ function renderStrideCounter(){
     h += `</svg></div>`;
     h += `<div class="q-prompt"><span class="tag">Distance & stride feel</span>How many strides would you ride between fence 1 and fence 2?</div>`;
     h += options.map(o=>`<button class="opt" data-n="${o}">${o} stride${o===1?'':'s'}</button>`).join('');
-    h += `<div class="status" id="sstatus" style="display:none"></div>`;
     el('spatial-body').innerHTML = h;
     answered=false;
     el('spatial-body').querySelectorAll('.opt').forEach(btn=>{
@@ -1219,15 +1234,13 @@ function renderStrideCounter(){
           if(+b.dataset.n===n) b.classList.add('correct');
           else if(b===btn) b.classList.add('wrong');
         });
-        // draw the strides
-        const dots=el('strideDots'); let ds='';
-        const start=topY+ (units/(n+1));
+        // draw the strides so she can see them
+        let ds='';
         for(let k=1;k<=n;k++){ const y=topY + units*k/(n+1); ds+=`<circle cx="${cx}" cy="${y.toFixed(1)}" r="4.5" fill="#2d6a4a"/>`; }
-        dots.innerHTML=ds;
-        const ss=el('sstatus'); ss.style.display='block';
-        if(chosen===n){score++;ss.className='status ok';ss.textContent=`Right! ${ft} ft ≈ ${n} stride${n===1?'':'s'}. See the strides drawn out.`;}
-        else {ss.className='status bad';ss.textContent=`It's ${n} (about ${ft} ft). Each green dot is one canter stride.`;}
-        setTimeout(()=>{ idx++; if(idx>=total) summary(); else draw(); },1700);
+        el('strideDots').innerHTML=ds;
+        const advance=()=>{ idx++; if(idx>=total) summary(); else draw(); };
+        if(chosen===n){ score++; flashResult(true,`Right! ${n} stride${n===1?'':'s'} ≈ ${ft} ft.`,'',advance); }
+        else { flashResult(false,`It's ${n} stride${n===1?'':'s'} (about ${ft} ft).`,'Each green dot on the line is one canter stride — count them.',advance); }
       });
     });
   }
