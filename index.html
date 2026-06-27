@@ -44,7 +44,7 @@
   /* Header */
   header{
     background:linear-gradient(160deg,var(--green-dk),var(--green));
-    color:#fff;padding:calc(var(--safe-top) + 14px) 18px 14px;
+    color:#fff;padding:calc(var(--safe-top) + 14px) 74px 14px 18px;
     box-shadow:var(--shadow);position:sticky;top:0;z-index:20;
   }
   header .brand{display:flex;align-items:center;gap:10px}
@@ -195,6 +195,23 @@
   .rotrow span{margin-right:2px}
   .rotbtn{width:40px;height:36px;border:2px solid var(--green-soft);background:#fff;border-radius:10px;font-size:20px;line-height:1;color:var(--green-dk);cursor:pointer}
   .rotbtn:active{transform:scale(.95)}
+  /* Ribbons */
+  .ribbon-btn{position:absolute;top:calc(var(--safe-top) + 16px);right:16px;background:rgba(255,255,255,.16);border:none;border-radius:999px;padding:4px 12px 4px 6px;display:flex;align-items:center;gap:5px;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .ribbon-btn:active{transform:scale(.96)}
+  .celebrate{position:fixed;inset:0;background:rgba(10,34,23,.78);z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .25s}
+  .cel-card{background:#fff;border-radius:22px;padding:26px 22px;max-width:330px;width:100%;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.45)}
+  .cel-card .rose{display:inline-block;animation:pop .55s cubic-bezier(.2,1.35,.4,1)}
+  @keyframes pop{from{transform:scale(.3) rotate(-18deg);opacity:0}to{transform:none;opacity:1}}
+  .cel-card h2{margin:8px 0 2px;color:var(--green-dk);font-size:24px}
+  .cel-card p{margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.4}
+  .case-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:6px 0 10px}
+  .case-item{display:flex;flex-direction:column;align-items:center;width:74px}
+  .case-item .cnt{font-weight:800;color:var(--green-dk);font-size:14px;margin-top:1px}
+  .case-total{text-align:center;font-weight:800;color:var(--green-dk);font-size:15px}
+  .case-empty{text-align:center;color:var(--muted);padding:20px 6px;font-size:14px;line-height:1.5}
+  .case-log{margin-top:12px;border-top:1px solid var(--green-soft);padding-top:8px;max-height:32vh;overflow:auto}
+  .case-log .row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:var(--ink)}
+  .case-log .row b{color:var(--green-dk)}
 </style>
 </head>
 <body>
@@ -212,6 +229,7 @@
         <div class="greet" id="greet"></div>
       </div>
     </div>
+    <button id="ribbonBtn" class="ribbon-btn" aria-label="My ribbons"></button>
   </header>
 
   <main>
@@ -606,6 +624,8 @@ function renderQuiz(c){
       if(expected>=c.jumps.length){
         done=true;
         setStatus(wrongs===0?`Perfect round! Clear with no mistakes 🏆`:`Course complete! ${wrongs} wrong tap${wrongs===1?'':'s'}.`, 'ok');
+        const place = wrongs===0?1:(wrongs<=2?2:(wrongs<=4?3:0));
+        awardRibbon(place,'Course order',`${c.name} — ${wrongs===0?'clear round!':wrongs+' wrong tap'+(wrongs===1?'':'s')}`);
       }else{
         setStatus(`Nice — fence ${best+1}! Now find fence ${expected+1}.`,'ok');
       }
@@ -649,7 +669,7 @@ function renderTrace(c){
   el('course-body').innerHTML = h;
 
   const svg = el('tsvg'), draw = el('tdraw');
-  let drawing=false, pts=[];
+  let drawing=false, pts=[], traceAwarded=false;
   function setStatus(m,cls){const s=el('tstatus');s.textContent=m;s.className='status'+(cls?' '+cls:'');}
   function start(e){ e.preventDefault(); drawing=true; pts=[]; if(e.pointerId!=null&&svg.setPointerCapture){ try{svg.setPointerCapture(e.pointerId);}catch(_){} } add(e); }
   function add(e){ if(!drawing) return;
@@ -673,6 +693,7 @@ function renderTrace(c){
     const total=c.jumps.length;
     if(expected===total){
       setStatus(`That's the whole track — all ${total} fences in order! Tap “Show ideal track” to compare your route.`,'ok');
+      if(!traceAwarded){ traceAwarded=true; awardRibbon(1,'Course trace',`${c.name} — whole track from memory!`); }
     }else{
       setStatus(`You rode ${expected} of ${total} fences in order. Next you needed fence ${expected+1} — keep your line smooth and ride right through it.`,'bad');
     }
@@ -1003,6 +1024,7 @@ function finishLineQuiz(correct,total){
   el('view-ring').innerHTML = h;
   el('bk').addEventListener('click',renderRing);
   el('again').addEventListener('click',renderLineQuiz);
+  awardRibbon(placeByScore(correct,total),'Ring lines',`Tap-the-line quiz — ${correct}/${total}`);
 }
 
 /* ============================ TERMINOLOGY section ============================ */
@@ -1067,6 +1089,7 @@ function finishTermQuiz(score,total){
     <button class="btn gold" id="tagain">Try again</button></div>`;
   el('terms-body').innerHTML = h;
   el('tagain').addEventListener('click',renderTermQuiz);
+  awardRibbon(placeByScore(score,total),'Terminology',`Terms quiz — ${score}/${total}`);
 }
 
 /* ============================ SPATIAL section ============================ */
@@ -1157,6 +1180,7 @@ function renderWhichWay(){
       <button class="btn gold" id="wagain">Ride again</button></div>`;
     el('spatial-body').innerHTML = h;
     el('wagain').addEventListener('click',renderWhichWay);
+    awardRibbon(placeByScore(score,total),'Which Way?',`Which Way? — ${score}/${total}`);
   }
   draw();
 }
@@ -1212,6 +1236,7 @@ function renderStrideCounter(){
       <button class="btn gold" id="sagain">Try again</button></div>`;
     el('spatial-body').innerHTML = h;
     el('sagain').addEventListener('click',renderStrideCounter);
+    awardRibbon(placeByScore(score,total),'Stride Counter',`Stride Counter — ${score}/${total}`);
   }
   draw();
 }
@@ -1244,6 +1269,67 @@ function renderPatterns(){
 /* ============================ Utility ============================ */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
+/* ============================ Ribbons ============================ */
+const RIBBON_COLORS={1:'#2150d8',2:'#c33126',3:'#e6b400',4:'#f4f4f4',5:'#e85fa3',6:'#2e8b57'};
+const RIBBON_DARK  ={1:'#16379a',2:'#8f231b',3:'#b08a00',4:'#d2d2d2',5:'#b23b76',6:'#1d6b40'};
+const PLACE_NAME={1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th',6:'6th'};
+function getRibbons(){ try{ return JSON.parse(localStorage.getItem('rr_ribbons')||'[]'); }catch(e){ return []; } }
+function pleats(cx,cy,r,c,d){ let s=''; const N=16; for(let i=0;i<N;i++){ const a=i/N*2*Math.PI, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.3" fill="${i%2?d:c}"/>`; } return s; }
+function ribbonSVG(place,size){
+  size=size||40; const c=RIBBON_COLORS[place]||'#888', d=RIBBON_DARK[place]||'#555';
+  const txt=(place===3||place===4)?'#3a2c00':'#fff';
+  return `<svg width="${size}" height="${(size*1.4).toFixed(0)}" viewBox="0 0 40 56" aria-hidden="true">`
+    + `<polygon points="20,30 14,30 11,54 19,47" fill="${d}"/><polygon points="20,30 26,30 29,54 21,47" fill="${d}"/>`
+    + pleats(20,21,16,c,d)
+    + `<circle cx="20" cy="21" r="13" fill="${c}"/><circle cx="20" cy="21" r="8.5" fill="#fff"/><circle cx="20" cy="21" r="7" fill="${c}"/>`
+    + `<text x="20" y="21.5" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="800" fill="${txt}">${place}</text></svg>`;
+}
+function placeByScore(score,total){
+  if(score>=total) return 1;
+  if(score>=Math.floor(total*0.8)) return 2;
+  if(score>=Math.floor(total*0.6)) return 3;
+  return 0;
+}
+function updateRibbonBtn(){ const b=el('ribbonBtn'); if(b) b.innerHTML = `${ribbonSVG(1,20)}<span>${getRibbons().length}</span>`; }
+function awardRibbon(place,activity,detail){
+  if(!place||place<1) return;
+  const list=getRibbons();
+  list.push({p:place,a:activity,d:detail||'',t:Date.now()});
+  if(list.length>150) list.splice(0,list.length-150);
+  try{ localStorage.setItem('rr_ribbons',JSON.stringify(list)); }catch(e){}
+  updateRibbonBtn();
+  celebrateRibbon(place,detail||activity);
+}
+function celebrateRibbon(place,detail){
+  const ov=document.createElement('div'); ov.className='celebrate';
+  ov.innerHTML=`<div class="cel-card"><div class="rose">${ribbonSVG(place,86)}</div>
+    <h2>${PLACE_NAME[place]} Place!</h2><p>${esc(detail)}</p>
+    <button class="btn gold" id="celOk">Add to my ribbons 🎉</button></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector('#celOk').addEventListener('click',close);
+  ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+}
+function openRibbonCase(){
+  const list=getRibbons(); const counts={}; list.forEach(r=>counts[r.p]=(counts[r.p]||0)+1);
+  let body;
+  if(!list.length){
+    body=`<div class="case-empty">No ribbons yet!<br>Ace a quiz, trace a course from memory, or tap the order correctly to win your first one. 🐴</div>`;
+  }else{
+    let grid=''; [1,2,3,4,5,6].forEach(p=>{ if(counts[p]) grid+=`<div class="case-item">${ribbonSVG(p,52)}<div class="cnt">×${counts[p]}</div></div>`; });
+    const recent=list.slice().reverse().slice(0,15).map(r=>`<div class="row">${ribbonSVG(r.p,24)}<div><b>${PLACE_NAME[r.p]} place</b> · ${esc(r.d||r.a)}</div></div>`).join('');
+    body=`<div class="case-grid">${grid}</div><div class="case-total">${list.length} ribbon${list.length===1?'':'s'} won</div><div class="case-log">${recent}</div>`;
+  }
+  const ov=document.createElement('div'); ov.className='overlay';
+  ov.innerHTML=`<div class="ob-card" style="max-width:360px">
+    <h2 style="color:var(--green-dk);margin:0 0 12px">🎀 My Ribbons</h2>${body}
+    <button class="btn" id="caseClose" style="margin-top:16px">Close</button></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector('#caseClose').addEventListener('click',close);
+  ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+}
+
 /* ============================ Onboarding & init ============================ */
 function applyGreeting(){
   const n=getName();
@@ -1262,8 +1348,10 @@ function init(){
     el('onboard').classList.add('hidden');
   }
   applyGreeting();
+  updateRibbonBtn();
   renderCourses();
 }
+el('ribbonBtn').addEventListener('click',openRibbonCase);
 el('startBtn').addEventListener('click',()=>{
   const v=(el('nameInput').value||'').trim();
   if(!v){el('nameInput').focus();el('nameInput').placeholder='Please type your name';return;}
