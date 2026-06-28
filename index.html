@@ -207,11 +207,12 @@
   .tabs.four button{padding:9px 4px;font-size:12.5px}
   .scoreline{font-size:12px;color:var(--muted);text-align:center;margin-top:5px;letter-spacing:.3px}
   /* Calm / breathwork */
-  .breathe-stage{position:relative;display:flex;align-items:center;justify-content:center;height:300px;margin:4px 0}
-  .breathe-circle{width:190px;height:190px;border-radius:50%;background:transparent;border:3px solid #8fa074;box-sizing:border-box;transform:scale(.7);transition:transform .6s ease-in-out;will-change:transform}
+  .breathe-stage{position:relative;display:flex;align-items:center;justify-content:center;height:330px;margin:4px 0;cursor:pointer}
+  .breathe-circle{width:248px;height:248px;border-radius:50%;background:transparent;border:6px solid #8fa074;box-sizing:border-box;transform:scale(.66);transition:transform .8s ease-in-out;will-change:transform}
   .breathe-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--green-dk);pointer-events:none}
-  .breathe-label span{font-size:18px;font-weight:500;letter-spacing:.4px}
+  .breathe-label span{font-size:17px;font-weight:500;letter-spacing:.4px}
   .breathe-label b{font-size:30px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1.1}
+  .breathe-hint{text-align:center;font-size:12px;color:var(--muted);margin:-4px 0 8px;letter-spacing:.3px}
   .breathe-tally{text-align:center;font-size:12.5px;color:var(--muted);margin:2px 0 10px;min-height:16px;letter-spacing:.3px}
   /* Photo calibration */
   .calib{position:fixed;inset:0;background:#0d2a1d;z-index:80;display:flex;flex-direction:column}
@@ -233,6 +234,9 @@
   .crop-h{position:absolute;width:30px;height:30px;background:var(--gold);border:2px solid #fff;border-radius:50%;touch-action:none;box-shadow:0 1px 5px rgba(0,0,0,.5)}
   .crop-h.tl{left:-15px;top:-15px}.crop-h.tr{right:-15px;top:-15px}
   .crop-h.bl{left:-15px;bottom:-15px}.crop-h.br{right:-15px;bottom:-15px}
+  /* draggable in-gate marker that rides along the bottom edge of the crop box */
+  .crop-gate{position:absolute;bottom:0;left:50%;transform:translate(-50%,50%);background:var(--gold);color:#3a2c00;font-size:11px;font-weight:700;letter-spacing:.3px;padding:4px 9px;border-radius:9px;border:2px solid #fff;white-space:nowrap;touch-action:none;box-shadow:0 1px 6px rgba(0,0,0,.5);cursor:ew-resize}
+  .crop-gate::before{content:'';position:absolute;top:-7px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#fff}
   /* Rotate controls */
   /* Builder wizard */
   .wiz{display:flex;align-items:center;gap:6px;margin:2px 0 10px}
@@ -856,7 +860,7 @@ function renderBuildStep(){
 
 function wireBuildStep(){
   const q=id=>el(id);
-  if(q('bphotoBtn')) q('bphotoBtn').addEventListener('click',()=>pickImage(raw=>openCalibration(raw,(url,gateFrac)=>{ buildPhoto=url; if(gateFrac!=null) buildGate=gateFrac; renderBuildStep(); })));
+  if(q('bphotoBtn')) q('bphotoBtn').addEventListener('click',()=>pickImage(raw=>openCalibration(raw,(url,gateFrac,rot)=>{ buildPhoto=url; if(gateFrac!=null) buildGate=gateFrac; if(rot!=null) buildRot=rot; renderBuildStep(); })));
   if(q('bphotoClear')) q('bphotoClear').addEventListener('click',()=>{ buildPhoto=null; renderBuildStep(); });
   if(q('bopacity')) q('bopacity').addEventListener('input',e=>{ buildOpacity=e.target.value/100; const im=el('bphoto'); if(im) im.setAttribute('opacity',buildOpacity); });
   if(q('browL')) q('browL').addEventListener('click',()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(buildStep===2); });
@@ -921,27 +925,32 @@ function downscaleImage(img,max=1100,q=0.72){
   try{ return cv.toDataURL('image/jpeg',q); }catch(e){ return img.src; }
 }
 
-/* Crop a posted-course photo to the ring. Drag a ring-shaped box over the
-   photo, then crop — the result fills the app ring. */
+/* Frame a posted-course photo to the ring. The photo can be rotated (posted
+   courses are often drawn in a different orientation), and an in-gate marker is
+   dragged along the bottom edge to record where the rider enters. The result
+   fills the app ring upright with the gate on the bottom rail. */
 function openCalibration(rawUrl,onDone){
   const AR=(RING.x1-RING.x0)/(RING.y1-RING.y0); // ring aspect (w/h)
   const ov=document.createElement('div'); ov.className='calib';
   ov.innerHTML=`
-    <div class="calib-top"><div class="calib-msg">Crop to the ring</div>
-      <div class="calib-sub">Drag the box to move it; pull a corner to resize. Frame just the ring.</div></div>
+    <div class="calib-top"><div class="calib-msg">Frame the ring</div>
+      <div class="calib-sub">Rotate so the in-gate is at the bottom, frame just the ring, then slide the in-gate marker to where you enter.</div></div>
     <div class="calib-stage" id="cstage"><div id="cwrap"><img id="cimg" alt="course photo">
-      <div class="crop-box" id="cbox"><div class="crop-grid"><i class="v" style="left:33.33%"></i><i class="v" style="left:66.66%"></i><i class="h" style="top:33.33%"></i><i class="h" style="top:66.66%"></i></div>
+      <div class="crop-box" id="cbox">
+        <div class="crop-grid"><i class="v" style="left:33.33%"></i><i class="v" style="left:66.66%"></i><i class="h" style="top:33.33%"></i><i class="h" style="top:66.66%"></i></div>
         <div class="crop-h tl" data-h="tl"></div><div class="crop-h tr" data-h="tr"></div><div class="crop-h bl" data-h="bl"></div><div class="crop-h br" data-h="br"></div>
+        <div class="crop-gate" id="cgate">in-gate</div>
       </div></div></div>
     <div class="calib-bar">
       <button class="btn ghost sm" id="ccancel">Cancel</button>
-      <button class="btn ghost sm" id="craw">Use as-is</button>
-      <button class="btn sm" id="cuse">Crop &amp; use</button>
+      <button class="btn ghost sm" id="crot">⟳ Rotate</button>
+      <button class="btn sm" id="cuse">Use this</button>
     </div>`;
   document.body.appendChild(ov);
-  const img=ov.querySelector('#cimg'), box=ov.querySelector('#cbox');
-  let IW=0,IH=0, crop={x:0,y:0,w:0,h:0};
-  function place(){ box.style.left=crop.x+'px'; box.style.top=crop.y+'px'; box.style.width=crop.w+'px'; box.style.height=crop.h+'px'; }
+  const img=ov.querySelector('#cimg'), box=ov.querySelector('#cbox'), gateEl=ov.querySelector('#cgate');
+  let IW=0,IH=0, crop={x:0,y:0,w:0,h:0}, gateFrac=0.5, cropRot=0;
+  function placeGate(){ gateEl.style.left=(gateFrac*100)+'%'; }
+  function place(){ box.style.left=crop.x+'px'; box.style.top=crop.y+'px'; box.style.width=crop.w+'px'; box.style.height=crop.h+'px'; placeGate(); }
   function layout(){
     IW=img.clientWidth; IH=img.clientHeight;
     let w=IW*0.9, h=w/AR; if(h>IH*0.9){ h=IH*0.9; w=h*AR; }
@@ -954,16 +963,22 @@ function openCalibration(rawUrl,onDone){
   const pt=e=>{ const t=e.touches&&e.touches[0]?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; };
   let mode=null,hKind=null,sx0=0,sy0=0,c0=null;
   function down(e){
-    const hh=e.target.closest('.crop-h');
-    mode=hh?'resize':'move'; hKind=hh?hh.dataset.h:null;
+    if(e.target.closest('.crop-gate')){ mode='gate'; }
+    else { const hh=e.target.closest('.crop-h'); mode=hh?'resize':'move'; hKind=hh?hh.dataset.h:null; }
     const p=pt(e); sx0=p.x; sy0=p.y; c0={...crop};
     if(e.cancelable) e.preventDefault();
     if(hasPointer){ window.addEventListener('pointermove',move); window.addEventListener('pointerup',up); }
     else { window.addEventListener('touchmove',move,{passive:false}); window.addEventListener('touchend',up); }
   }
   function move(e){
-    if(!c0) return; if(e.cancelable) e.preventDefault();
-    const p=pt(e), dx=p.x-sx0, dy=p.y-sy0;
+    if(!mode) return; if(e.cancelable) e.preventDefault();
+    const p=pt(e);
+    if(mode==='gate'){
+      const r=box.getBoundingClientRect();
+      gateFrac=Math.max(0.08,Math.min(0.92,(p.x-r.left)/(r.width||1)));
+      placeGate(); return;
+    }
+    const dx=p.x-sx0, dy=p.y-sy0;
     if(mode==='move'){
       crop.x=Math.max(0,Math.min(IW-crop.w, c0.x+dx));
       crop.y=Math.max(0,Math.min(IH-crop.h, c0.y+dy));
@@ -984,22 +999,36 @@ function openCalibration(rawUrl,onDone){
     }
     place();
   }
-  function up(){ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('touchmove',move); window.removeEventListener('touchend',up); }
+  function up(){ mode=null; window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('touchmove',move); window.removeEventListener('touchend',up); }
   if(hasPointer) box.addEventListener('pointerdown',down); else box.addEventListener('touchstart',down,{passive:false});
+
+  // Rotate the whole photo 90° so a portrait posted course can be framed upright.
+  ov.querySelector('#crot').addEventListener('click',()=>{ cropRot=(cropRot+90)%360; rotateImage(rawUrl,cropRot,u=>{ img.src=u; }); });
 
   function close(){ window.removeEventListener('resize',layout); ov.remove(); }
   ov.querySelector('#ccancel').addEventListener('click',close);
-  ov.querySelector('#craw').addEventListener('click',()=>{ onDone(rawUrl); close(); });
   ov.querySelector('#cuse').addEventListener('click',()=>{
     const scale=(img.naturalWidth||IW)/IW;
     const sx=crop.x*scale, sy=crop.y*scale, sw=crop.w*scale, sh=crop.h*scale;
     const OW=660, OH=Math.round(OW/AR);
     const oc=document.createElement('canvas'); oc.width=OW; oc.height=OH;
     try{ oc.getContext('2d').drawImage(img, sx,sy,sw,sh, 0,0,OW,OH); }
-    catch(e){ onDone(rawUrl); close(); return; }
+    catch(e){ onDone(rawUrl,null,0); close(); return; }
     let url; try{ url=oc.toDataURL('image/jpeg',0.82); }catch(e){ url=rawUrl; }
-    onDone(url); close();
+    onDone(url, gateFrac, 0); close();   // photo is baked upright → course rotation 0
   });
+}
+/* Rotate an image data URL by deg (0/90/180/270) and return a new data URL. */
+function rotateImage(srcUrl,deg,cb){
+  const im=new Image();
+  im.onload=()=>{
+    const w=im.naturalWidth,h=im.naturalHeight, swap=(deg%180!==0);
+    const cw=swap?h:w, ch=swap?w:h;
+    const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+    const c=cv.getContext('2d'); c.translate(cw/2,ch/2); c.rotate(deg*Math.PI/180); c.drawImage(im,-w/2,-h/2);
+    try{ cb(cv.toDataURL('image/jpeg',0.85)); }catch(e){ cb(srcUrl); }
+  };
+  im.onerror=()=>cb(srcUrl); im.src=srcUrl;
 }
 function drawBuildJumps(){
   const g = el('bjumps'); if(!g) return;
@@ -1378,11 +1407,11 @@ const PATTERNS = [
    [label, seconds, circleScale] — the circle grows on inhales, shrinks on the
    exhale. Exhales are emphasized (longer out-breath = parasympathetic / calming). */
 const BREATH_PATTERNS = {
-  sigh:    {name:'Physiological Sigh', phases:[['Breathe in',3,0.85],['Sip in a little more',1,1],['Long breath out',6,0.5]],
+  sigh:    {name:'Physiological Sigh', phases:[['Breathe in',3.5,0.84],['A little more',1.2,1],['Breathe out',7,0.66]],
             blurb:'Two breaths in through the nose, then a long breath out through the mouth. The fastest way to calm a racing heart — no holding.'},
-  coherent:{name:'Coherent', phases:[['Breathe in',5,1],['Breathe out',5,0.5]],
+  coherent:{name:'Coherent', phases:[['Breathe in',5,1],['Breathe out',5,0.66]],
             blurb:'Slow, even breaths — about six a minute. Settles the nervous system. No holds.'},
-  settle:  {name:'Settle', phases:[['Breathe in',4,1],['Breathe out',6,0.5]],
+  settle:  {name:'Settle', phases:[['Breathe in',4,1],['Breathe out',6,0.66]],
             blurb:'In for four, out for six. The longer out-breath tells your body it’s safe to relax. Easy to do at the gate.'}
 };
 let calm = null; // active breathing engine
@@ -1393,15 +1422,18 @@ function renderCalm(){
   h += `<div class="tabs">` + Object.keys(BREATH_PATTERNS).map(k=>
         `<button data-bk="${k}" class="${k===key?'active':''}">${esc(BREATH_PATTERNS[k].name)}</button>`).join('') + `</div>`;
   h += `<p class="sub" id="calmBlurb" style="text-align:center;margin:0 0 12px">${esc(BREATH_PATTERNS[key].blurb)}</p>`;
-  h += `<div class="breathe-stage">
+  h += `<div class="breathe-stage" id="bstage">
       <div class="breathe-circle" id="bcircle"></div>
       <div class="breathe-label"><span id="bphase">Ready?</span><b id="bcount"></b></div>
     </div>`;
+  h += `<p class="breathe-hint" id="bhintcalm">Tap the circle to start</p>`;
   h += `<p class="breathe-tally" id="btally"></p>`;
-  h += `<div class="btn-row"><button class="btn ghost" id="bsound">🔇 Sound off</button><button class="btn gold" id="bstart">Start</button></div>`;
+  h += `<div class="btn-row"><button class="btn ghost" id="bsound">🔇 Breath sound</button><button class="btn gold" id="bstart">Start</button></div>`;
   el('view-calm').innerHTML = h;
   el('view-calm').querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{ stopCalm(); calm=makeBreather(b.dataset.bk); renderCalm(); }));
-  el('bstart').addEventListener('click',()=>{ if(!calm) calm=makeBreather(key); calm.toggle(); });
+  const go=()=>{ if(!calm) calm=makeBreather(key); calm.toggle(); };
+  el('bstart').addEventListener('click',go);
+  el('bstage').addEventListener('click',go);            // tapping the circle starts/pauses too
   el('bsound').addEventListener('click',()=>{ if(!calm) calm=makeBreather(key); calm.toggleSound(); });
   // restore engine reference into the fresh DOM
   if(calm){ calm.attach(); }
@@ -1410,12 +1442,14 @@ function renderCalm(){
    and an optional gentle WebAudio tone. No dependencies. */
 function makeBreather(key){
   const cfg = BREATH_PATTERNS[key];
-  let running=false, soundOn=false, phaseI=0, timer=0, tick=0, laps=0, lastScale=0.5;
-  let actx=null, master=null, osc=null;
+  let running=false, soundOn=false, phaseI=0, timer=0, tick=0, laps=0, lastScale=0.66;
+  let actx=null, master=null, noise=null, filter=null;
+  const REST=0.66; // circle never shrinks past this, so the ring stays clear of the text
   function setLabel(t){ const e=el('bphase'); if(e) e.textContent=t; }
   function setCount(n){ const e=el('bcount'); if(e) e.textContent=n||''; }
+  function setHint(t){ const e=el('bhintcalm'); if(e) e.textContent=t; }
   function setTally(){ const e=el('btally'); if(e) e.textContent = laps? `${laps} breath${laps===1?'':'s'} done — nicely done.` : ''; }
-  function setSoundBtn(){ const b=el('bsound'); if(b) b.textContent = soundOn?'🔊 Sound on':'🔇 Sound off'; }
+  function setSoundBtn(){ const b=el('bsound'); if(b) b.textContent = soundOn?'🔊 Breath sound':'🔇 Breath sound'; }
   function setStartBtn(){ const b=el('bstart'); if(b) b.textContent = running?'Pause':'Start'; }
   function circle(){ return el('bcircle'); }
   function applyPhase(){
@@ -1435,34 +1469,52 @@ function makeBreather(key){
     }, secs*1000);
   }
   function start(){
-    if(running) return; running=true; setStartBtn();
-    lastScale=0.5;
-    const c=circle(); if(c){ c.style.transitionDuration='0.3s'; c.style.transform='scale(0.5)'; }
+    if(running) return; running=true; setStartBtn(); setHint('Tap the circle to pause');
+    lastScale=REST;
+    const c=circle(); if(c){ c.style.transitionDuration='0.3s'; c.style.transform=`scale(${REST})`; }
     phaseI=0; setTimeout(()=>{ if(running) applyPhase(); }, 320);
   }
   function pause(){
-    running=false; setStartBtn(); clearTimeout(timer); clearInterval(tick);
+    running=false; setStartBtn(); setHint('Tap the circle to start'); clearTimeout(timer); clearInterval(tick);
     setLabel('Paused'); setCount(''); stopTone();
-    const c=circle(); if(c){ c.style.transitionDuration='0.6s'; c.style.transform='scale(0.7)'; }
+    const c=circle(); if(c){ c.style.transitionDuration='0.6s'; c.style.transform=`scale(${REST})`; }
   }
   function toggle(){ running?pause():start(); }
   function stop(){ running=false; clearTimeout(timer); clearInterval(tick); stopTone(); if(actx){ try{actx.close();}catch(e){} actx=null; } }
-  // --- gentle audio: a soft sine that swells on inhale, fades on exhale ---
+  // --- audible breath: filtered noise that whooshes IN on the inhale and OUT
+  //     on the exhale, pacing the breath. Brighter/louder on the way in,
+  //     darker and trailing away on the way out. ---
   function ensureAudio(){
     if(actx) return;
     try{
       const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
-      actx=new AC(); master=actx.createGain(); master.gain.value=0; master.connect(actx.destination);
-      osc=actx.createOscillator(); osc.type='sine'; osc.frequency.value=174; // low, soothing
-      const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=500;
-      osc.connect(lp); lp.connect(master); osc.start();
+      actx=new AC();
+      master=actx.createGain(); master.gain.value=0; master.connect(actx.destination);
+      // looping noise buffer = the "air" of the breath
+      const buf=actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
+      const data=buf.getChannelData(0);
+      let last=0;
+      for(let i=0;i<data.length;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; data[i]=last*3.2; } // soft, airy
+      noise=actx.createBufferSource(); noise.buffer=buf; noise.loop=true;
+      filter=actx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=480; filter.Q.value=0.7;
+      noise.connect(filter); filter.connect(master); noise.start();
     }catch(e){ actx=null; }
   }
   function breathTone(inhaling,secs){
     if(!soundOn||!actx||!master) return;
-    const now=actx.currentTime, g=master.gain;
-    g.cancelScheduledValues(now); g.setValueAtTime(g.value,now);
-    g.linearRampToValueAtTime(inhaling?0.05:0.0, now+secs);
+    const now=actx.currentTime, g=master.gain, f=filter.frequency;
+    g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001,g.value),now);
+    f.cancelScheduledValues(now); f.setValueAtTime(f.value,now);
+    if(inhaling){
+      // breathe in: rises and brightens, peaking near the top of the inhale
+      g.linearRampToValueAtTime(0.16, now+secs*0.85);
+      f.linearRampToValueAtTime(820, now+secs);
+    }else{
+      // breathe out: softer, darker, trailing away across the whole exhale
+      g.setValueAtTime(0.13, now);
+      g.linearRampToValueAtTime(0.0001, now+secs);
+      f.linearRampToValueAtTime(300, now+secs);
+    }
   }
   function stopTone(){ if(actx&&master){ const now=actx.currentTime; master.gain.cancelScheduledValues(now); master.gain.linearRampToValueAtTime(0,now+0.4); } }
   function toggleSound(){
@@ -1471,7 +1523,7 @@ function makeBreather(key){
     else stopTone();
   }
   function attach(){ // re-sync button labels/tally after a re-render
-    setSoundBtn(); setStartBtn(); setTally();
+    setSoundBtn(); setStartBtn(); setTally(); setHint(running?'Tap the circle to pause':'Tap the circle to start');
     if(!running){ setLabel('Ready?'); setCount(''); }
   }
   return { key, toggle, toggleSound, stop, attach };
