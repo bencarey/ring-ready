@@ -527,6 +527,25 @@ function normGate(gate){
   else if(gate&&typeof gate==='object'){ side=gate.side||'b'; if(gate.frac!=null) frac=gate.frac; }
   return {side, frac:Math.max(0.12,Math.min(0.88,frac))};
 }
+/* Centre point (course coords) of a gate on its rail. */
+function gateCenter(gate){
+  const {side,frac}=normGate(gate);
+  if(side==='t') return [RING.x0+frac*(RING.x1-RING.x0), RING.y0];
+  if(side==='l') return [RING.x0, RING.y0+frac*(RING.y1-RING.y0)];
+  if(side==='r') return [RING.x1, RING.y0+frac*(RING.y1-RING.y0)];
+  return [RING.x0+frac*(RING.x1-RING.x0), RING.y1];
+}
+/* Snap an arbitrary course point to the nearest rail + fraction along it. */
+function gateFromPoint(px,py){
+  const dB=Math.abs(py-RING.y1), dT=Math.abs(py-RING.y0), dL=Math.abs(px-RING.x0), dR=Math.abs(px-RING.x1);
+  const m=Math.min(dB,dT,dL,dR);
+  const clamp=v=>Math.max(0.12,Math.min(0.88,v));
+  const fx=clamp((px-RING.x0)/(RING.x1-RING.x0)), fy=clamp((py-RING.y0)/(RING.y1-RING.y0));
+  if(m===dL) return {side:'l',frac:fy};
+  if(m===dR) return {side:'r',frac:fy};
+  if(m===dT) return {side:'t',frac:fx};
+  return {side:'b',frac:fx};
+}
 /* In-gate reference drawn on whichever rail the course enters from. */
 function gateSVG(gate){
   const {side,frac}=normGate(gate);
@@ -876,6 +895,7 @@ function renderBuildStep(){
     h += `<p class="zoomhint">Pinch to zoom in and read the numbers. <button class="linkbtn" id="bzreset" style="display:none">Reset view</button></p>`;
     h += `<div class="gaterow"><span>In-gate</span>` + ['b','t','l','r'].map(s=>`<button class="gatebtn${buildGate.side===s?' on':''}" data-side="${s}">${GATE_NAMES[s]}</button>`).join('') + `</div>`;
     h += `<div style="margin:2px 0 0"><input id="bgatepos" type="range" min="12" max="88" value="${Math.round(buildGate.frac*100)}" style="width:100%;accent-color:var(--green)"></div>`;
+    h += `<p class="zoomhint" style="margin-top:5px">Drag the in-gate on the ring, or use the buttons and slider.</p>`;
   } else {
     h += `<div class="hintbar" id="bdrawhint">${buildPath?'Nice line! Draw again to redo it.':'Trace your whole track through the fences in order.'}</div>`;
     h += `<div class="ringwrap" id="bringwrap"></div>`;
@@ -919,6 +939,11 @@ function wireBuildStep(){
   if(q('bsave')) q('bsave').addEventListener('click',saveBuild);
 }
 function redrawGate(){ const g=el('bgate'); if(!g) return; ROT=buildRot; g.innerHTML=gateSVG(buildGate); ROT=0; }
+function syncGateControls(){
+  const root=el('view-build'); if(!root) return;
+  root.querySelectorAll('.gatebtn').forEach(x=>x.classList.toggle('on', x.dataset.side===buildGate.side));
+  const sl=el('bgatepos'); if(sl) sl.value=Math.round(buildGate.frac*100);
+}
 function buildRingSVG(){
   ROT = buildRot;
   let s = `<svg class="ring" viewBox="${ringVB(buildRot)}" id="bsvg"><g transform="rotate(${buildRot} 180 120)">`
@@ -939,11 +964,26 @@ function refreshBuildRing(mode){
   if(!mode) return;
   const svg = el('bsvg');
   if(mode==='draw'){ setupBuildDraw(svg); return; }
+  // drag the in-gate directly: grab near it and it follows your finger, snapping
+  // to the nearest rail. Dragging suppresses the tap so it doesn't place a fence.
+  let gating=false, gateMoved=false;
+  svg.addEventListener('pointerdown',(e)=>{
+    const p=svgPoint(svg,e), c=rotPt(p.x,p.y,-buildRot), gc=gateCenter(buildGate);
+    if(Math.hypot(c.x-gc[0],c.y-gc[1])<22){ gating=true; gateMoved=false; e.preventDefault(); try{svg.setPointerCapture(e.pointerId);}catch(_){} }
+  });
+  svg.addEventListener('pointermove',(e)=>{
+    if(!gating) return; e.preventDefault();
+    const p=svgPoint(svg,e), c=rotPt(p.x,p.y,-buildRot), g=gateFromPoint(c.x,c.y);
+    buildGate={side:g.side, frac:g.frac}; gateMoved=true; redrawGate(); syncGateControls();
+  });
+  svg.addEventListener('pointerup',()=>{ gating=false; });
   // tap to place / remove a fence (works at any zoom — svgPoint uses the live CTM)
   svg.addEventListener('click',(e)=>{
+    if(gateMoved){ gateMoved=false; return; }   // that was a gate drag, not a fence tap
     const pt = svgPoint(svg,e);
     const cp = rotPt(pt.x,pt.y,-buildRot); // tap -> course space
     if(cp.x<RING.x0+6||cp.x>RING.x1-6||cp.y<RING.y0+6||cp.y>RING.y1-6) return;
+    const gc=gateCenter(buildGate); if(Math.hypot(cp.x-gc[0],cp.y-gc[1])<22) return; // near gate — don't drop a fence
     let best=-1,bd=1e9;
     buildJumps.forEach((j,i)=>{const d=Math.hypot(j.x-cp.x,j.y-cp.y);if(d<bd){bd=d;best=i;}});
     if(best>=0&&bd<20){ buildJumps.splice(best,1); buildJumps.forEach((j,i)=>j.n=i+1); }
@@ -977,6 +1017,9 @@ function setupRingZoom(svg){
       pinch={ d0:dist(e.touches[0],e.touches[1])||1, w0:vb.w, fx, fy, cx:vb.x+fx*vb.w, cy:vb.y+fy*vb.h };
       pan=null;
     } else if(e.touches.length===1 && vb.w<baseW-0.5){
+      // don't pan if the finger landed on the in-gate — let the gate drag win
+      const p=svgPoint(svg,e.touches[0]), c=rotPt(p.x,p.y,-buildRot), gc=gateCenter(buildGate);
+      if(Math.hypot(c.x-gc[0],c.y-gc[1])<22) return;
       pan={ x0:e.touches[0].clientX, y0:e.touches[0].clientY, vb0:{...vb} };
     }
   },{passive:false});
