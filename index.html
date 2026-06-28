@@ -498,6 +498,17 @@ function smoothD(pts){
   return d;
 }
 
+/* A horse that gallops along a path, with a canter bob/jump. SMIL animateMotion. */
+function horseOnPath(d, dur){
+  dur = dur || 9;
+  return `<g class="horseM" aria-hidden="true"><g>`
+    + `<text font-size="19" text-anchor="middle" dominant-baseline="central">🐎`
+    +   `<animateTransform attributeName="transform" attributeType="XML" type="translate" values="0 1.5; 0 -5.5; 0 1.5" keyTimes="0;0.5;1" dur="0.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.3 0 0.2 1; 0.8 0 0.7 1"/>`
+    + `</text>`
+    + `<animateMotion dur="${dur}s" repeatCount="indefinite" rotate="0" path="${d}"/>`
+    + `</g></g>`;
+}
+
 /* direction (unit) for jump i based on neighbours */
 function jumpDir(jumps,i){
   const a = jumps[i-1]||jumps[i], b = jumps[i+1]||jumps[i];
@@ -525,6 +536,7 @@ function courseStudySVG(c){
   s += `<circle class="startdot" cx="${sx}" cy="${sy}" r="4"/>`;
   s += `<text class="lbl" x="${sx-4}" y="${sy-8}" transform="rotate(${-ROT} ${sx-4} ${sy-8})">start</text>`;
   c.jumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(c.jumps,i)) + badge(j,j.n); });
+  s += horseOnPath(smoothD(path), 9);
   s += `</g></svg>`;
   ROT = 0;
   return s;
@@ -698,6 +710,7 @@ function renderTrace(c){
   // show where the jumps are, but NOT their order — she has to remember it
   c.jumps.forEach((j,i)=>{ h += poleFor(j,jumpDir(c.jumps,i),'faint') + `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="3.5"/>`; });
   h += `<path class="ideal" id="tideal" style="display:none" d="${smoothD(ideal)}"/>`;
+  h += `<g id="thorse" style="display:none">${horseOnPath(smoothD(ideal),9)}</g>`;
   h += `<path class="tdraw" id="tdraw" d=""/>`;
   h += `</g></svg></div>`;
   ROT = 0;
@@ -745,7 +758,7 @@ function renderTrace(c){
   svg.addEventListener('touchmove',e=>{e.preventDefault();add(e);},{passive:false});
   svg.addEventListener('touchend',end);
   el('tclear').addEventListener('click',()=>{pts=[];draw.setAttribute('d','');el('tideal').style.display='none';el('tscore').textContent='';setStatus('Ride the whole track from memory — finger-trace through every fence in the right order.');});
-  el('tshow').addEventListener('click',()=>{const ti=el('tideal');ti.style.display=ti.style.display==='none'?'block':'none';});
+  el('tshow').addEventListener('click',()=>{const ti=el('tideal');const show=ti.style.display==='none';ti.style.display=show?'block':'none';const th=el('thorse');if(th)th.style.display=show?'block':'none';});
 }
 
 /* ============================ BUILDER section ============================ */
