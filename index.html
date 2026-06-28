@@ -204,9 +204,9 @@
   .scoreline{font-size:12px;color:var(--muted);text-align:center;margin-top:5px;letter-spacing:.3px}
   /* Calm / breathwork */
   #view-calm.view.active{display:flex;flex-direction:column;height:100%}
-  .breathe-stage{flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:190px;margin:4px 0}
-  .breathe-circle{width:190px;height:190px;border-radius:50%;background:#8fa074;display:flex;align-items:center;justify-content:center;transform:scale(.7);transition:transform .6s ease-in-out;will-change:transform}
-  .breathe-label{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f4f0e7}
+  .breathe-stage{position:relative;flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:190px;margin:4px 0}
+  .breathe-circle{width:190px;height:190px;border-radius:50%;background:transparent;border:3px solid #8fa074;box-sizing:border-box;transform:scale(.7);transition:transform .6s ease-in-out;will-change:transform}
+  .breathe-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--green-dk);pointer-events:none}
   .breathe-label span{font-size:18px;font-weight:500;letter-spacing:.4px}
   .breathe-label b{font-size:30px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1.1}
   .breathe-tally{text-align:center;font-size:12.5px;color:var(--muted);margin:2px 0 10px;min-height:16px;letter-spacing:.3px}
@@ -1370,21 +1370,29 @@ const PATTERNS = [
 ];
 
 /* ============================ CALM (breathwork) section ============================ */
+/* All patterns are HOLD-FREE on purpose: holding the breath raises CO2 and
+   "air hunger," which tends to make anxiety worse. Each phase is
+   [label, seconds, circleScale] — the circle grows on inhales, shrinks on the
+   exhale. Exhales are emphasized (longer out-breath = parasympathetic / calming). */
 const BREATH_PATTERNS = {
-  box:    {name:'Box Breathing', phases:[['Breathe in',4],['Hold',4],['Breathe out',4],['Hold',4]], blurb:'Even 4-4-4-4 breaths. Steadies a racing heart before you go in.'},
-  relax:  {name:'4·7·8 Relax', phases:[['Breathe in',4],['Hold',7],['Breathe out',8]], blurb:'A longer out-breath tells your body it’s safe to calm down.'},
-  settle: {name:'Settle', phases:[['Breathe in',4],['Breathe out',6]], blurb:'Simple in-4, out-6. Easy to do on your horse at the gate.'}
+  sigh:    {name:'Physiological Sigh', phases:[['Breathe in',3,0.85],['Sip in a little more',1,1],['Long breath out',6,0.5]],
+            blurb:'Two breaths in through the nose, then a long breath out through the mouth. The fastest way to calm a racing heart — no holding.'},
+  coherent:{name:'Coherent', phases:[['Breathe in',5,1],['Breathe out',5,0.5]],
+            blurb:'Slow, even breaths — about six a minute. Settles the nervous system. No holds.'},
+  settle:  {name:'Settle', phases:[['Breathe in',4,1],['Breathe out',6,0.5]],
+            blurb:'In for four, out for six. The longer out-breath tells your body it’s safe to relax. Easy to do at the gate.'}
 };
 let calm = null; // active breathing engine
 function stopCalm(){ if(calm){ calm.stop(); calm=null; } }
 function renderCalm(){
-  const key = (calm && calm.key) || 'box';
+  const key = (calm && calm.key) || 'sigh';
   let h = `<h2 class="title">Calm</h2><p class="sub">Nervous before you ride? Pick a breathing pattern and follow the circle. Slow breathing settles the nerves.</p>`;
   h += `<div class="tabs">` + Object.keys(BREATH_PATTERNS).map(k=>
         `<button data-bk="${k}" class="${k===key?'active':''}">${esc(BREATH_PATTERNS[k].name)}</button>`).join('') + `</div>`;
   h += `<p class="sub" id="calmBlurb" style="text-align:center;margin:0 0 12px">${esc(BREATH_PATTERNS[key].blurb)}</p>`;
   h += `<div class="breathe-stage">
-      <div class="breathe-circle" id="bcircle"><div class="breathe-label"><span id="bphase">Ready?</span><b id="bcount"></b></div></div>
+      <div class="breathe-circle" id="bcircle"></div>
+      <div class="breathe-label"><span id="bphase">Ready?</span><b id="bcount"></b></div>
     </div>`;
   h += `<p class="breathe-tally" id="btally"></p>`;
   h += `<div class="btn-row"><button class="btn ghost" id="bsound">🔇 Sound off</button><button class="btn gold" id="bstart">Start</button></div>`;
@@ -1399,7 +1407,7 @@ function renderCalm(){
    and an optional gentle WebAudio tone. No dependencies. */
 function makeBreather(key){
   const cfg = BREATH_PATTERNS[key];
-  let running=false, soundOn=false, phaseI=0, timer=0, tick=0, laps=0;
+  let running=false, soundOn=false, phaseI=0, timer=0, tick=0, laps=0, lastScale=0.5;
   let actx=null, master=null, osc=null;
   function setLabel(t){ const e=el('bphase'); if(e) e.textContent=t; }
   function setCount(n){ const e=el('bcount'); if(e) e.textContent=n||''; }
@@ -1408,17 +1416,13 @@ function makeBreather(key){
   function setStartBtn(){ const b=el('bstart'); if(b) b.textContent = running?'Pause':'Start'; }
   function circle(){ return el('bcircle'); }
   function applyPhase(){
-    const [label,secs]=cfg.phases[phaseI];
+    const [label,secs,scale]=cfg.phases[phaseI];
     setLabel(label);
     const c=circle();
-    if(c){
-      c.style.transitionDuration = secs+'s';
-      // grow on inhale, shrink on exhale; on a hold, keep the current size
-      if(label==='Breathe in') c.style.transform='scale(1)';
-      else if(label==='Breathe out') c.style.transform='scale(0.55)';
-    }
-    breathTone(label,secs);
-    let remain=secs; setCount(remain);
+    if(c){ c.style.transitionDuration = secs+'s'; c.style.transform = `scale(${scale})`; }
+    breathTone(scale>lastScale, secs); // swelling tone on the way in, fading on the way out
+    lastScale=scale;
+    let remain=Math.round(secs); setCount(remain);
     clearInterval(tick);
     tick=setInterval(()=>{ remain--; if(remain>=1) setCount(remain); }, 1000);
     timer=setTimeout(()=>{
@@ -1429,7 +1433,8 @@ function makeBreather(key){
   }
   function start(){
     if(running) return; running=true; setStartBtn();
-    const c=circle(); if(c){ c.style.transitionDuration='0.3s'; c.style.transform='scale(0.55)'; }
+    lastScale=0.5;
+    const c=circle(); if(c){ c.style.transitionDuration='0.3s'; c.style.transform='scale(0.5)'; }
     phaseI=0; setTimeout(()=>{ if(running) applyPhase(); }, 320);
   }
   function pause(){
@@ -1450,13 +1455,11 @@ function makeBreather(key){
       osc.connect(lp); lp.connect(master); osc.start();
     }catch(e){ actx=null; }
   }
-  function breathTone(label,secs){
+  function breathTone(inhaling,secs){
     if(!soundOn||!actx||!master) return;
     const now=actx.currentTime, g=master.gain;
-    g.cancelScheduledValues(now);
-    if(label==='Breathe in'){ g.setValueAtTime(g.value,now); g.linearRampToValueAtTime(0.05,now+secs); }
-    else if(label==='Breathe out'){ g.setValueAtTime(g.value,now); g.linearRampToValueAtTime(0.0,now+secs); }
-    else { g.setValueAtTime(g.value,now); } // hold: steady
+    g.cancelScheduledValues(now); g.setValueAtTime(g.value,now);
+    g.linearRampToValueAtTime(inhaling?0.05:0.0, now+secs);
   }
   function stopTone(){ if(actx&&master){ const now=actx.currentTime; master.gain.cancelScheduledValues(now); master.gain.linearRampToValueAtTime(0,now+0.4); } }
   function toggleSound(){
