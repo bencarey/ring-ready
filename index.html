@@ -1234,14 +1234,14 @@ function renderStrideCounter(){
     let options=[n-1,n,n+1,n+2].filter(v=>v>=1&&v<=7);
     options=Array.from(new Set(options)); shuffle(options);
     let h = `<div class="counter">Question ${idx+1} of ${total} · Score ${score}</div>`;
-    h += `<div class="hintbar">1 canter stride ≈ 12 feet</div>`;
+    h += `<div class="hintbar">Rings come in all sizes — but a canter stride is always ~12 ft, and a line is <em>set</em> to a fixed distance. So a line rides the same in any ring.</div>`;
     h += `<div class="ringwrap"><svg class="ring" viewBox="${VB}" id="ssvg">`;
     h += ringFrameSVG({gate:true});
     h += `<g id="strideDots"></g>`;
     h += poleFor({x:cx,y:topY},[0,1]) + badge({x:cx,y:topY},1);
     h += poleFor({x:cx,y:botY},[0,1]) + badge({x:cx,y:botY},2);
     h += `</svg></div>`;
-    h += `<div class="q-prompt"><span class="tag">Distance & stride feel</span>How many strides would you ride between fence 1 and fence 2?</div>`;
+    h += `<div class="q-prompt"><span class="tag">Distance & stride feel</span>This line is set the same in any ring — how many strides would you ride between fence 1 and fence 2?</div>`;
     h += options.map(o=>`<button class="opt" data-n="${o}">${o} stride${o===1?'':'s'}</button>`).join('');
     el('spatial-body').innerHTML = h;
     answered=false;
@@ -1259,8 +1259,8 @@ function renderStrideCounter(){
         for(let k=1;k<=n;k++){ const y=topY + units*k/(n+1); ds+=`<circle cx="${cx}" cy="${y.toFixed(1)}" r="4.5" fill="#76806a"/>`; }
         el('strideDots').innerHTML=ds;
         const advance=()=>{ idx++; if(idx>=total) summary(); else draw(); };
-        if(chosen===n){ score++; flashResult(true,`Right! ${n} stride${n===1?'':'s'} ≈ ${ft} ft.`,'',advance); }
-        else { flashResult(false,`It's ${n} stride${n===1?'':'s'} (about ${ft} ft).`,'Each green dot on the line is one canter stride — count them.',advance); }
+        if(chosen===n){ score++; flashResult(true,`Right! A ${n}-stride line is set at ≈ ${ft} ft.`,'A stride is ~12 ft — the same distance in any ring.',advance); }
+        else { flashResult(false,`It's ${n} stride${n===1?'':'s'} — a line set at about ${ft} ft.`,'A canter stride is ~12 ft (each green dot). Same distance in any ring.',advance); }
       });
     });
   }
