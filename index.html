@@ -768,28 +768,25 @@ function renderTrace(c){
 /* ============================ BUILDER section ============================ */
 let buildJumps = [];
 let buildPhoto = null, buildGate = 0.41, buildRot = 0, buildOpacity = 0.6;
-let buildStep = 1, buildName = '', buildLevel = "2' Short Stirrup";
-const BUILD_LEVELS = ["2' Short Stirrup","2'3\" Hunters","2'6\" Hunters","3' Hunters","Hunter Derby","Schooling"];
+let buildStep = 1, buildName = '';
 
 /* Entry from the tab bar — always start a fresh course at step 1. */
 function renderBuilder(){
   buildJumps = []; buildPhoto = null; buildGate = 0.41; buildRot = 0; buildOpacity = 0.6;
-  buildStep = 1; buildName = ''; buildLevel = BUILD_LEVELS[0];
+  buildStep = 1; buildName = '';
   renderBuildStep();
 }
 
-/* Four-step flow: 1) photo  2) mark up jumps  3) category  4) name */
+/* Two-step flow: 1) photo + name  2) mark up the jumps */
 function renderBuildStep(){
-  const titles = ['Add photo','Mark up the course','Choose category','Name your course'];
+  const titles = ['Photo & name','Mark up the course'];
   const subs = [
-    'Snap or pick a picture of the posted course so you can trace it. No photo? Skip and build from a blank ring.',
-    'Tap each fence on the ring in the order you ride it. Tap a fence again to take it off.',
-    'What kind of course is this?',
-    'Give it a name so you can find it in Courses later.'
+    'Add a picture of the posted course (optional), then give your course a name.',
+    'Tap each fence on the ring in the order you ride it. Tap a fence again to take it off.'
   ];
   let h = `<h2 class="title">Course Builder</h2>`;
-  h += `<div class="wiz">` + [1,2,3,4].map(i=>`<span class="wstep ${i===buildStep?'on':''} ${i<buildStep?'done':''}"></span>`).join('') + `</div>`;
-  h += `<p class="wlabel">Step ${buildStep} of 4 · ${titles[buildStep-1]}</p>`;
+  h += `<div class="wiz">` + [1,2].map(i=>`<span class="wstep ${i===buildStep?'on':''} ${i<buildStep?'done':''}"></span>`).join('') + `</div>`;
+  h += `<p class="wlabel">Step ${buildStep} of 2 · ${titles[buildStep-1]}</p>`;
   h += `<p class="sub">${subs[buildStep-1]}</p>`;
 
   if(buildStep===1){
@@ -800,20 +797,16 @@ function renderBuildStep(){
       h += `<div style="margin:2px 0 8px"><label style="font-weight:600;color:var(--muted);font-size:10.5px;letter-spacing:1px;text-transform:uppercase">Fade photo</label><input id="bopacity" type="range" min="10" max="100" value="${Math.round(buildOpacity*100)}" style="width:100%;accent-color:var(--green)"></div>`;
       h += `<div class="ringwrap" id="bringwrap"></div>`;
     }
-  } else if(buildStep===2){
+    h += `<div class="field" style="margin-top:14px"><label>Course name</label><input id="bname" type="text" placeholder="e.g. Saturday Mini Derby" maxlength="28" value="${esc(buildName)}"></div>`;
+  } else {
     h += `<div class="rotrow"><span>Rotate</span><button class="rotbtn" id="browL" title="Rotate left">⟲</button><button class="rotbtn" id="browR" title="Rotate right">⟳</button></div>`;
     h += `<div class="hintbar" id="bhint">0 jumps placed — tap inside the ring to start.</div>`;
     h += `<div class="ringwrap" id="bringwrap"></div>`;
-  } else if(buildStep===3){
-    h += BUILD_LEVELS.map(l=>`<button class="opt levopt${l===buildLevel?' sel':''}" data-lev="${esc(l)}">${esc(l)}</button>`).join('');
-  } else {
-    h += `<div class="field"><label>Course name</label><input id="bname" type="text" placeholder="e.g. Saturday Mini Derby" maxlength="28" value="${esc(buildName)}"></div>`;
-    h += `<div class="recap"><b>${buildJumps.length}</b> jump${buildJumps.length===1?'':'s'} · <b>${esc(buildLevel)}</b>${buildPhoto?' · with photo':''}</div>`;
   }
 
   h += `<div class="btn-row" style="margin-top:14px">`;
   if(buildStep>1) h += `<button class="btn ghost" id="bback">Back</button>`;
-  if(buildStep<4) h += `<button class="btn" id="bnext">${buildStep===1&&!buildPhoto?'Skip':'Next'}</button>`;
+  if(buildStep<2) h += `<button class="btn" id="bnext">Next</button>`;
   else h += `<button class="btn gold" id="bsave">Save course</button>`;
   h += `</div>`;
 
@@ -829,11 +822,10 @@ function wireBuildStep(){
   if(q('browL')) q('browL').addEventListener('click',()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(buildStep===2); });
   if(q('browR')) q('browR').addEventListener('click',()=>{ buildRot=(buildRot+90)%360; refreshBuildRing(buildStep===2); });
   if(q('bringwrap')) refreshBuildRing(buildStep===2);
-  el('view-build').querySelectorAll('.levopt').forEach(b=>b.addEventListener('click',()=>{ buildLevel=b.dataset.lev; renderBuildStep(); }));
   if(q('bname')) q('bname').addEventListener('input',e=>{ buildName=e.target.value; });
   if(q('bback')) q('bback').addEventListener('click',()=>{ buildStep--; renderBuildStep(); });
   if(q('bnext')) q('bnext').addEventListener('click',()=>{
-    if(buildStep===2 && buildJumps.length<2){ toast('Tap at least 2 fences on the ring first'); return; }
+    if(!buildName.trim()){ toast('Give your course a name first'); if(q('bname')) q('bname').focus(); return; }
     buildStep++; renderBuildStep();
   });
   if(q('bsave')) q('bsave').addEventListener('click',saveBuild);
@@ -988,7 +980,7 @@ function saveBuild(){
   const id='u'+Date.now();
   const course = {
     id,
-    name, level: buildLevel,
+    name,
     jumps: buildJumps.map((j,i)=>({n:i+1,x:j.x,y:j.y})),
     gate: buildGate
   };
