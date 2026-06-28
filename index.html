@@ -49,22 +49,23 @@
     -webkit-text-size-adjust:100%;
     overscroll-behavior-y:none;
   }
-  /* leave room at the bottom so content can scroll clear of the fixed tab bar */
-  #app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;background:var(--cream);padding-bottom:calc(68px + var(--safe-bot))}
+  #app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;background:var(--cream)}
+  /* Sticky top bar (header + tabs) — keeps navigation pinned to the top, which
+     sidesteps the iOS bottom-bar / safe-area issues entirely. */
+  #topbar{position:sticky;top:0;z-index:20}
   /* Header */
   header{
-    position:sticky;top:0;
+    position:relative;
     background:var(--green-dk);
     color:#f2efe6;padding:calc(var(--safe-top) + 12px) 70px 12px 18px;
     border-bottom:1px solid rgba(0,0,0,.08);
-    z-index:20;
   }
   header .brand{display:flex;align-items:center;gap:12px}
   header .brand .shoe{width:28px;height:28px;flex:none;opacity:.95}
   header h1{font-size:19px;margin:0;letter-spacing:2.4px;font-weight:400;text-transform:uppercase}
   header .greet{font-size:12px;color:var(--gold-lt);margin-top:3px;min-height:14px;letter-spacing:.4px;font-weight:300}
   /* Main */
-  main{padding:14px 16px 0;animation:fade .25s ease}
+  main{padding:14px 16px calc(20px + var(--safe-bot));animation:fade .25s ease}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   .view{display:none}
   .view.active{display:block}
@@ -154,7 +155,7 @@
   .opt.wrong{background:#efe0d6;border-color:var(--red);color:var(--red)}
   .opt:disabled{cursor:default}
   /* Quiz result flash (fixed so it's always on-screen) */
-  .qflash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-bot) + 80px);width:calc(100% - 24px);max-width:456px;z-index:45;border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(58,56,47,.16);font-size:15px;font-weight:600;text-align:center}
+  .qflash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-bot) + 22px);width:calc(100% - 24px);max-width:456px;z-index:45;border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(58,56,47,.16);font-size:15px;font-weight:600;text-align:center}
   .qflash{animation:flashin .2s ease}
   @keyframes flashin{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%)}}
   .qflash.ok{background:#e3ebdb;color:var(--green-ok);border:1px solid var(--green-ok)}
@@ -172,22 +173,23 @@
   .field input,.field select{width:100%;padding:14px;border:1px solid var(--line);border-radius:11px;font-size:15px;background:var(--card);color:var(--ink);font-family:inherit}
   .field input:focus,.field select:focus{outline:none;border-color:var(--green-md)}
   .hintbar{font-size:12.5px;color:var(--muted);text-align:center;margin-bottom:9px;line-height:1.4}
-  /* Bottom nav — fixed to the very bottom of the viewport; content scrolls under it */
+  .zoomhint{font-size:12px;color:var(--muted);text-align:center;margin:-2px 0 0;letter-spacing:.2px}
+  .linkbtn{background:none;border:none;color:var(--green-md);font:inherit;font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer;padding:0}
+  /* Top tab strip — sits in the sticky top bar under the header */
   nav{
-    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-    width:100%;max-width:480px;
-    background:rgba(237,231,220,.94);backdrop-filter:saturate(1.1) blur(12px);-webkit-backdrop-filter:saturate(1.1) blur(12px);
-    border-top:1px solid var(--line);
+    background:var(--cream);
+    border-bottom:1px solid var(--line);
     display:flex;justify-content:space-around;
-    padding:6px 4px calc(6px + var(--safe-bot));z-index:30;
+    padding:6px 4px 5px;
   }
   nav button{
-    background:none;border:none;flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;
-    padding:5px 2px;color:var(--muted);font-size:9.5px;font-weight:500;letter-spacing:.5px;cursor:pointer;border-radius:10px;transition:color .15s;
+    position:relative;background:none;border:none;flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:4px 2px 6px;color:var(--muted);font-size:9.5px;font-weight:500;letter-spacing:.5px;cursor:pointer;transition:color .15s;
   }
-  nav button svg{width:22px;height:22px}
+  nav button svg{width:21px;height:21px}
   nav button.active{color:var(--green-dk)}
   nav button.active svg{stroke:var(--green-dk)}
+  nav button.active::after{content:'';position:absolute;bottom:-6px;left:18%;right:18%;height:2.5px;border-radius:2px;background:var(--green-dk)}
   nav button svg{stroke:var(--muted);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
   /* Onboarding overlay */
   .overlay{position:fixed;inset:0;background:var(--green-dk);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .3s ease}
@@ -199,7 +201,7 @@
   .ob-card input{width:100%;padding:14px;border:1px solid var(--line);border-radius:11px;font-size:16px;text-align:center;margin-bottom:14px;font-family:inherit;color:var(--ink)}
   .ob-card input:focus{outline:none;border-color:var(--green-md)}
   .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
-  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--green-dk);color:#f2efe6;padding:11px 20px;border-radius:8px;font-size:13.5px;font-weight:500;z-index:50;box-shadow:0 8px 24px rgba(28,26,20,.25);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;letter-spacing:.3px}
+  .toast{position:fixed;bottom:calc(var(--safe-bot) + 28px);left:50%;transform:translateX(-50%);background:var(--green-dk);color:#f2efe6;padding:11px 20px;border-radius:8px;font-size:13.5px;font-weight:500;z-index:50;box-shadow:0 8px 24px rgba(28,26,20,.25);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;letter-spacing:.3px}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
   .tabs{display:flex;gap:6px;margin-bottom:10px;background:var(--green-soft);padding:4px;border-radius:11px}
   .tabs button{flex:1;padding:10px;border:none;border-radius:8px;background:transparent;color:var(--green-md);font-weight:500;font-size:13.5px;cursor:pointer;transition:.15s;letter-spacing:.2px}
@@ -278,6 +280,7 @@
 </head>
 <body>
 <div id="app">
+  <div id="topbar">
   <header>
     <div class="brand">
       <svg class="shoe" viewBox="0 0 100 100" aria-hidden="true">
@@ -293,19 +296,6 @@
     </div>
     <button id="ribbonBtn" class="ribbon-btn" aria-label="My ribbons"></button>
   </header>
-
-  <main>
-    <!-- COURSES -->
-    <section class="view active" id="view-courses"></section>
-    <!-- SPATIAL -->
-    <section class="view" id="view-spatial"></section>
-    <!-- BUILDER -->
-    <section class="view" id="view-build"></section>
-    <!-- RING IQ (ring geography + patterns + terms + mixed quiz) -->
-    <section class="view" id="view-learn"></section>
-    <!-- CALM (breathwork) -->
-    <section class="view" id="view-calm"></section>
-  </main>
 
   <nav id="nav">
     <button data-view="courses" class="active">
@@ -329,6 +319,20 @@
       Calm
     </button>
   </nav>
+  </div>
+
+  <main>
+    <!-- COURSES -->
+    <section class="view active" id="view-courses"></section>
+    <!-- SPATIAL -->
+    <section class="view" id="view-spatial"></section>
+    <!-- BUILDER -->
+    <section class="view" id="view-build"></section>
+    <!-- RING IQ (ring geography + patterns + terms + mixed quiz) -->
+    <section class="view" id="view-learn"></section>
+    <!-- CALM (breathwork) -->
+    <section class="view" id="view-calm"></section>
+  </main>
 </div>
 
 <!-- Onboarding -->
@@ -846,6 +850,7 @@ function renderBuildStep(){
     h += `<div class="rotrow"><span>Rotate</span><button class="rotbtn" id="browL" title="Rotate left">⟲</button><button class="rotbtn" id="browR" title="Rotate right">⟳</button></div>`;
     h += `<div class="hintbar" id="bhint">0 jumps placed — tap inside the ring to start.</div>`;
     h += `<div class="ringwrap" id="bringwrap"></div>`;
+    h += `<p class="zoomhint">Pinch to zoom in and read the numbers. <button class="linkbtn" id="bzreset" style="display:none">Reset view</button></p>`;
   }
 
   h += `<div class="btn-row" style="margin-top:14px">`;
@@ -892,6 +897,7 @@ function refreshBuildRing(interactive){
   drawBuildJumps();
   if(!interactive) return;
   const svg = el('bsvg');
+  // tap to place / remove a fence (works at any zoom — svgPoint uses the live CTM)
   svg.addEventListener('click',(e)=>{
     const pt = svgPoint(svg,e);
     const cp = rotPt(pt.x,pt.y,-buildRot); // tap -> course space
@@ -902,6 +908,50 @@ function refreshBuildRing(interactive){
     else { buildJumps.push({n:buildJumps.length+1,x:Math.round(cp.x),y:Math.round(cp.y)}); }
     drawBuildJumps();
   });
+  setupRingZoom(svg);
+}
+/* Pinch to zoom + drag to pan the markup ring so small numbers on a posted
+   course are readable. Taps still place fences; "Reset view" snaps back. */
+function setupRingZoom(svg){
+  const base=(svg.getAttribute('viewBox')||'0 0 360 240').split(/\s+/).map(Number);
+  const baseW=base[2], baseH=base[3], minW=baseW/5;
+  let vb={x:base[0],y:base[1],w:baseW,h:baseH};
+  svg.style.touchAction='none';
+  function setVB(){ svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`); const b=el('bzreset'); if(b) b.style.display = vb.w<baseW-0.5?'':'none'; }
+  function clampPan(){
+    vb.x = vb.w>=baseW ? base[0] : Math.max(base[0], Math.min(base[0]+baseW-vb.w, vb.x));
+    vb.y = vb.h>=baseH ? base[1] : Math.max(base[1], Math.min(base[1]+baseH-vb.h, vb.y));
+  }
+  function reset(){ vb={x:base[0],y:base[1],w:baseW,h:baseH}; setVB(); }
+  const rb=el('bzreset'); if(rb) rb.onclick=reset;
+  const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+  let pinch=null, pan=null;
+  svg.addEventListener('touchstart',(e)=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const r=svg.getBoundingClientRect();
+      const mx=(e.touches[0].clientX+e.touches[1].clientX)/2, my=(e.touches[0].clientY+e.touches[1].clientY)/2;
+      const fx=(mx-r.left)/r.width, fy=(my-r.top)/r.height;
+      pinch={ d0:dist(e.touches[0],e.touches[1])||1, w0:vb.w, fx, fy, cx:vb.x+fx*vb.w, cy:vb.y+fy*vb.h };
+      pan=null;
+    } else if(e.touches.length===1 && vb.w<baseW-0.5){
+      pan={ x0:e.touches[0].clientX, y0:e.touches[0].clientY, vb0:{...vb} };
+    }
+  },{passive:false});
+  svg.addEventListener('touchmove',(e)=>{
+    if(pinch && e.touches.length>=2){
+      e.preventDefault();
+      const scale=dist(e.touches[0],e.touches[1])/pinch.d0;
+      const w=Math.max(minW, Math.min(baseW, pinch.w0/scale)), h=w*(baseH/baseW);
+      vb.w=w; vb.h=h; vb.x=pinch.cx-pinch.fx*w; vb.y=pinch.cy-pinch.fy*h; clampPan(); setVB();
+    } else if(pan && e.touches.length===1){
+      const r=svg.getBoundingClientRect();
+      const dx=e.touches[0].clientX-pan.x0, dy=e.touches[0].clientY-pan.y0;
+      if(Math.abs(dx)+Math.abs(dy)>3) e.preventDefault(); // a real drag — suppress the tap/click
+      vb.x=pan.vb0.x - dx/r.width*vb.w; vb.y=pan.vb0.y - dy/r.height*vb.h; clampPan(); setVB();
+    }
+  },{passive:false});
+  svg.addEventListener('touchend',(e)=>{ if(e.touches.length===0){ pinch=null; pan=null; } });
 }
 /* Pick an image from camera/library and downscale it for localStorage */
 function pickImage(cb){

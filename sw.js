@@ -1,5 +1,5 @@
 /* Ring Ready service worker — offline app shell */
-const CACHE = 'ring-ready-v11';
+const CACHE = 'ring-ready-v12';
 const ASSETS = [
   './',
   './index.html',
