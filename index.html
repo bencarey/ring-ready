@@ -253,6 +253,11 @@
   .rotrow span{margin-right:2px}
   .rotbtn{width:40px;height:34px;border:1px solid var(--line);background:var(--card);border-radius:10px;font-size:18px;line-height:1;color:var(--green-dk);cursor:pointer}
   .rotbtn:active{transform:scale(.96)}
+  /* In-gate rail picker */
+  .gaterow{display:flex;align-items:center;gap:6px;margin:6px 0 4px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .gaterow span{margin-right:2px}
+  .gatebtn{flex:1;padding:8px 4px;border:1px solid var(--line);background:var(--card);border-radius:9px;font-size:12px;font-weight:600;color:var(--green-md);cursor:pointer;letter-spacing:.2px}
+  .gatebtn.on{background:var(--green-soft);border-color:var(--green-md);color:var(--green-dk)}
   /* Ribbons */
   .ribbon-btn{position:absolute;top:calc(var(--safe-top) + 16px);right:14px;background:rgba(255,255,255,.12);border:none;border-radius:999px;padding:3px 9px 3px 7px;display:flex;align-items:center;gap:7px;color:#f2efe6;cursor:pointer;min-height:30px}
   .ribbon-btn:active{transform:scale(.96)}
@@ -514,15 +519,31 @@ function ringFrameSVG(opts){
   if(opts.gate) s += gateSVG(opts.gateFrac);
   return s;
 }
-/* In-gate reference on the bottom rail. frac = position along that rail (0..1). */
-function gateSVG(frac){
-  if(frac==null) frac=0.41;
-  frac=Math.max(0.12,Math.min(0.88,frac));
-  const cx=RING.x0+frac*(RING.x1-RING.x0), y=RING.y1, x1=cx-21, x2=cx+21, ly=y+16;
-  return `<rect x="${x1.toFixed(1)}" y="${y-3}" width="42" height="6" fill="#e4e4d7"/>`
-    + `<line x1="${x1.toFixed(1)}" y1="${y-7}" x2="${x1.toFixed(1)}" y2="${y+7}" stroke="#b27a54" stroke-width="4" stroke-linecap="round"/>`
-    + `<line x1="${x2.toFixed(1)}" y1="${y-7}" x2="${x2.toFixed(1)}" y2="${y+7}" stroke="#b27a54" stroke-width="4" stroke-linecap="round"/>`
-    + `<text class="lbl" x="${cx.toFixed(1)}" y="${ly}" text-anchor="middle" transform="rotate(${-ROT} ${cx.toFixed(1)} ${ly})">In-gate</text>`;
+/* Normalize a gate value: legacy number = position on the bottom rail;
+   object {side,frac} = any rail ('b','t','l','r') at fraction frac (0..1). */
+function normGate(gate){
+  let side='b', frac=0.41;
+  if(typeof gate==='number'){ frac=gate; }
+  else if(gate&&typeof gate==='object'){ side=gate.side||'b'; if(gate.frac!=null) frac=gate.frac; }
+  return {side, frac:Math.max(0.12,Math.min(0.88,frac))};
+}
+/* In-gate reference drawn on whichever rail the course enters from. */
+function gateSVG(gate){
+  const {side,frac}=normGate(gate);
+  let cx,cy,nx,ny; // n = outward normal of the rail
+  if(side==='t'){ cx=RING.x0+frac*(RING.x1-RING.x0); cy=RING.y0; nx=0; ny=-1; }
+  else if(side==='l'){ cx=RING.x0; cy=RING.y0+frac*(RING.y1-RING.y0); nx=-1; ny=0; }
+  else if(side==='r'){ cx=RING.x1; cy=RING.y0+frac*(RING.y1-RING.y0); nx=1; ny=0; }
+  else { cx=RING.x0+frac*(RING.x1-RING.x0); cy=RING.y1; nx=0; ny=1; } // bottom
+  const tx=-ny, ty=nx;                          // tangent along the rail
+  const g=21, p=7;                              // half gap between posts, post half-length
+  const a={x:cx-tx*g, y:cy-ty*g}, b={x:cx+tx*g, y:cy+ty*g};
+  const lx=cx+nx*16, ly=cy+ny*16+ (ny>0?0:(ny<0?-2:4));
+  const line=(x1,y1,x2,y2,col,w)=>`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`;
+  return line(a.x,a.y,b.x,b.y,'#e4e4d7',6)       // mask the rail opening
+    + line(a.x-nx*p,a.y-ny*p,a.x+nx*p,a.y+ny*p,'#b27a54',4)   // post 1
+    + line(b.x-nx*p,b.y-ny*p,b.x+nx*p,b.y+ny*p,'#b27a54',4)   // post 2
+    + `<text class="lbl" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" transform="rotate(${-ROT} ${lx.toFixed(1)} ${ly.toFixed(1)})">In-gate</text>`;
 }
 
 /* Catmull-Rom smoothed path */
@@ -815,26 +836,28 @@ function renderTrace(c){
 
 /* ============================ BUILDER section ============================ */
 let buildJumps = [];
-let buildPhoto = null, buildGate = 0.41, buildRot = 0, buildOpacity = 0.6;
-let buildStep = 1, buildName = '';
+let buildPhoto = null, buildGate = {side:'b',frac:0.41}, buildRot = 0, buildOpacity = 0.6;
+let buildStep = 1, buildName = '', buildPath = null; // buildPath = drawn ideal line (or null = inferred)
+const GATE_NAMES = {b:'Bottom',t:'Top',l:'Left',r:'Right'};
 
 /* Entry from the tab bar — always start a fresh course at step 1. */
 function renderBuilder(){
-  buildJumps = []; buildPhoto = null; buildGate = 0.41; buildRot = 0; buildOpacity = 0.6;
-  buildStep = 1; buildName = '';
+  buildJumps = []; buildPhoto = null; buildGate = {side:'b',frac:0.41}; buildRot = 0; buildOpacity = 0.6;
+  buildStep = 1; buildName = ''; buildPath = null;
   renderBuildStep();
 }
 
-/* Two-step flow: 1) photo + name  2) mark up the jumps */
+/* Three-step flow: 1) photo + name  2) fences + in-gate  3) draw the ideal line */
 function renderBuildStep(){
-  const titles = ['Photo & name','Mark up the course'];
+  const titles = ['Photo & name','Fences & in-gate','Draw the line'];
   const subs = [
     'Add a picture of the posted course (optional), then give your course a name.',
-    'Tap each fence on the ring in the order you ride it. Tap a fence again to take it off.'
+    'Tap each fence in the order you ride it (tap again to remove). Then set which rail you enter from.',
+    'Trace the line you’d ride with your finger — or skip it and the app will draw a smart line through your fences.'
   ];
   let h = `<h2 class="title">Course Builder</h2>`;
-  h += `<div class="wiz">` + [1,2].map(i=>`<span class="wstep ${i===buildStep?'on':''} ${i<buildStep?'done':''}"></span>`).join('') + `</div>`;
-  h += `<p class="wlabel">Step ${buildStep} of 2 · ${titles[buildStep-1]}</p>`;
+  h += `<div class="wiz">` + [1,2,3].map(i=>`<span class="wstep ${i===buildStep?'on':''} ${i<buildStep?'done':''}"></span>`).join('') + `</div>`;
+  h += `<p class="wlabel">Step ${buildStep} of 3 · ${titles[buildStep-1]}</p>`;
   h += `<p class="sub">${subs[buildStep-1]}</p>`;
 
   if(buildStep===1){
@@ -846,16 +869,22 @@ function renderBuildStep(){
       h += `<div class="ringwrap" id="bringwrap"></div>`;
     }
     h += `<div class="field" style="margin-top:14px"><label>Course name</label><input id="bname" type="text" placeholder="e.g. Saturday Mini Derby" maxlength="28" value="${esc(buildName)}"></div>`;
-  } else {
+  } else if(buildStep===2){
     h += `<div class="rotrow"><span>Rotate</span><button class="rotbtn" id="browL" title="Rotate left">⟲</button><button class="rotbtn" id="browR" title="Rotate right">⟳</button></div>`;
     h += `<div class="hintbar" id="bhint">0 jumps placed — tap inside the ring to start.</div>`;
     h += `<div class="ringwrap" id="bringwrap"></div>`;
     h += `<p class="zoomhint">Pinch to zoom in and read the numbers. <button class="linkbtn" id="bzreset" style="display:none">Reset view</button></p>`;
+    h += `<div class="gaterow"><span>In-gate</span>` + ['b','t','l','r'].map(s=>`<button class="gatebtn${buildGate.side===s?' on':''}" data-side="${s}">${GATE_NAMES[s]}</button>`).join('') + `</div>`;
+    h += `<div style="margin:2px 0 0"><input id="bgatepos" type="range" min="12" max="88" value="${Math.round(buildGate.frac*100)}" style="width:100%;accent-color:var(--green)"></div>`;
+  } else {
+    h += `<div class="hintbar" id="bdrawhint">${buildPath?'Nice line! Draw again to redo it.':'Trace your whole track through the fences in order.'}</div>`;
+    h += `<div class="ringwrap" id="bringwrap"></div>`;
+    h += `<div class="btn-row"><button class="btn ghost" id="bdrawclear">${buildPath?'Clear line':'Use smart line'}</button></div>`;
   }
 
   h += `<div class="btn-row" style="margin-top:14px">`;
   if(buildStep>1) h += `<button class="btn ghost" id="bback">Back</button>`;
-  if(buildStep<2) h += `<button class="btn" id="bnext">Next</button>`;
+  if(buildStep<3) h += `<button class="btn" id="bnext">Next</button>`;
   else h += `<button class="btn gold" id="bsave">Save course</button>`;
   h += `</div>`;
 
@@ -865,20 +894,31 @@ function renderBuildStep(){
 
 function wireBuildStep(){
   const q=id=>el(id);
-  if(q('bphotoBtn')) q('bphotoBtn').addEventListener('click',()=>pickImage(raw=>openCalibration(raw,(url,gateFrac,rot)=>{ buildPhoto=url; if(gateFrac!=null) buildGate=gateFrac; if(rot!=null) buildRot=rot; renderBuildStep(); })));
+  if(q('bphotoBtn')) q('bphotoBtn').addEventListener('click',()=>pickImage(raw=>openCalibration(raw,(url,gateFrac,rot)=>{ buildPhoto=url; if(gateFrac!=null) buildGate={side:'b',frac:gateFrac}; if(rot!=null) buildRot=rot; renderBuildStep(); })));
   if(q('bphotoClear')) q('bphotoClear').addEventListener('click',()=>{ buildPhoto=null; renderBuildStep(); });
   if(q('bopacity')) q('bopacity').addEventListener('input',e=>{ buildOpacity=e.target.value/100; const im=el('bphoto'); if(im) im.setAttribute('opacity',buildOpacity); });
-  if(q('browL')) q('browL').addEventListener('click',()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(buildStep===2); });
-  if(q('browR')) q('browR').addEventListener('click',()=>{ buildRot=(buildRot+90)%360; refreshBuildRing(buildStep===2); });
-  if(q('bringwrap')) refreshBuildRing(buildStep===2);
+  if(q('browL')) q('browL').addEventListener('click',()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(buildStep===2?'jumps':null); });
+  if(q('browR')) q('browR').addEventListener('click',()=>{ buildRot=(buildRot+90)%360; refreshBuildRing(buildStep===2?'jumps':null); });
+  if(q('bringwrap')) refreshBuildRing(buildStep===2?'jumps':buildStep===3?'draw':null);
   if(q('bname')) q('bname').addEventListener('input',e=>{ buildName=e.target.value; });
+  // in-gate controls
+  el('view-build').querySelectorAll('.gatebtn').forEach(b=>b.addEventListener('click',()=>{
+    buildGate={side:b.dataset.side, frac:buildGate.frac};
+    el('view-build').querySelectorAll('.gatebtn').forEach(x=>x.classList.toggle('on',x===b));
+    redrawGate();
+  }));
+  if(q('bgatepos')) q('bgatepos').addEventListener('input',e=>{ buildGate={side:buildGate.side, frac:e.target.value/100}; redrawGate(); });
+  // draw-line controls
+  if(q('bdrawclear')) q('bdrawclear').addEventListener('click',()=>{ buildPath=null; refreshBuildRing('draw'); const hh=el('bdrawhint'); if(hh) hh.textContent='Trace your whole track through the fences in order.'; const bc=el('bdrawclear'); if(bc) bc.textContent='Use smart line'; });
   if(q('bback')) q('bback').addEventListener('click',()=>{ buildStep--; renderBuildStep(); });
   if(q('bnext')) q('bnext').addEventListener('click',()=>{
-    if(!buildName.trim()){ toast('Give your course a name first'); if(q('bname')) q('bname').focus(); return; }
+    if(buildStep===1 && !buildName.trim()){ toast('Give your course a name first'); if(q('bname')) q('bname').focus(); return; }
+    if(buildStep===2 && buildJumps.length<2){ toast('Tap at least 2 fences on the ring first'); return; }
     buildStep++; renderBuildStep();
   });
   if(q('bsave')) q('bsave').addEventListener('click',saveBuild);
 }
+function redrawGate(){ const g=el('bgate'); if(!g) return; ROT=buildRot; g.innerHTML=gateSVG(buildGate); ROT=0; }
 function buildRingSVG(){
   ROT = buildRot;
   let s = `<svg class="ring" viewBox="${ringVB(buildRot)}" id="bsvg"><g transform="rotate(${buildRot} 180 120)">`
@@ -886,17 +926,19 @@ function buildRingSVG(){
     + `<image id="bphoto" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" preserveAspectRatio="xMidYMid meet" opacity="${buildOpacity}" href="${buildPhoto||''}" style="display:${buildPhoto?'':'none'}"/>`
     + `<line class="gline dash" x1="${RING.x0}" y1="120" x2="${RING.x1}" y2="120"/>`
     + `<rect class="rail" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`
-    + gateSVG(buildGate)
+    + `<g id="bgate">${gateSVG(buildGate)}</g>`
+    + `<path class="tdraw" id="bdraw" d=""/>`
     + `<g id="bjumps"></g></g></svg>`;
   ROT = 0;
   return s;
 }
-function refreshBuildRing(interactive){
+function refreshBuildRing(mode){
   const wrap=el('bringwrap'); if(!wrap) return;
   wrap.innerHTML = buildRingSVG();
   drawBuildJumps();
-  if(!interactive) return;
+  if(!mode) return;
   const svg = el('bsvg');
+  if(mode==='draw'){ setupBuildDraw(svg); return; }
   // tap to place / remove a fence (works at any zoom — svgPoint uses the live CTM)
   svg.addEventListener('click',(e)=>{
     const pt = svgPoint(svg,e);
@@ -1084,12 +1126,33 @@ function drawBuildJumps(){
   const g = el('bjumps'); if(!g) return;
   ROT = buildRot;
   let s = '';
-  if(buildJumps.length>1) s += `<path class="track" d="${smoothD(buildJumps.map(j=>[j.x,j.y]))}"/>`;
+  // show the drawn line if there is one, otherwise the smart line through the fences
+  const track = (buildPath && buildPath.length>1) ? buildPath : (buildJumps.length>1 ? buildJumps.map(j=>[j.x,j.y]) : null);
+  if(track) s += `<path class="track${buildPath?' solid':''}" d="${smoothD(track)}"/>`;
   buildJumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(buildJumps,i)) + badge(j,j.n); });
   g.innerHTML = s;
   ROT = 0;
   const hint=el('bhint'); if(hint) hint.textContent = buildJumps.length===0 ? (buildPhoto?'Photo lined up — now tap each numbered jump on the picture, in order.':'0 jumps placed — tap inside the ring to start.')
     : `${buildJumps.length} jump${buildJumps.length===1?'':'s'} placed. Tap a jump to remove it.`;
+}
+/* Step 3: finger-draw the ideal line; points are clamped inside the ring. */
+function setupBuildDraw(svg){
+  const draw=el('bdraw'); if(!draw) return;
+  svg.style.touchAction='none';
+  let drawing=false, pts=[];
+  const P=(e)=>{ const d=svgPoint(svg,e); const c=rotPt(d.x,d.y,-buildRot);
+    return [Math.max(RING.x0+2,Math.min(RING.x1-2,c.x)), Math.max(RING.y0+2,Math.min(RING.y1-2,c.y))]; };
+  const render=()=>{ draw.setAttribute('d', pts.length>1?smoothD(pts):''); };
+  function start(e){ e.preventDefault(); drawing=true; pts=[P(e)]; if(e.pointerId!=null&&svg.setPointerCapture){try{svg.setPointerCapture(e.pointerId);}catch(_){}} render(); }
+  function add(e){ if(!drawing) return; e.preventDefault(); pts.push(P(e)); render(); }
+  function end(){ if(!drawing) return; drawing=false;
+    if(pts.length>2){ buildPath=pts.slice(); }
+    draw.setAttribute('d',''); drawBuildJumps();
+    const hh=el('bdrawhint'); if(hh) hh.textContent = buildPath?'Nice line! Draw again to redo it.':'Trace your whole track through the fences in order.';
+    const bc=el('bdrawclear'); if(bc) bc.textContent = buildPath?'Clear line':'Use smart line';
+  }
+  svg.addEventListener('pointerdown',start); svg.addEventListener('pointermove',add); svg.addEventListener('pointerup',end); svg.addEventListener('pointercancel',end);
+  svg.addEventListener('touchstart',start,{passive:false}); svg.addEventListener('touchmove',add,{passive:false}); svg.addEventListener('touchend',end);
 }
 function saveBuild(){
   const name = (buildName||'').trim();
@@ -1104,12 +1167,13 @@ function saveBuild(){
     gate: buildGate
   };
   if(buildPhoto) course.photo = buildPhoto;
+  if(buildPath && buildPath.length>2) course.path = buildPath.map(p=>[Math.round(p[0]),Math.round(p[1])]);
   saved.push(course);
   try{ setSaved(saved); }
   catch(err){ toast('Storage full — try removing an old course or the photo'); return; }
   if(buildRot) setRotStore(id, buildRot);
   toast('Saved! Find it in Courses');
-  buildJumps=[]; buildPhoto=null; buildGate=0.41; buildRot=0;
+  buildJumps=[]; buildPhoto=null; buildGate={side:'b',frac:0.41}; buildRot=0; buildPath=null;
   renderBuilder();
 }
 
