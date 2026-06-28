@@ -110,6 +110,7 @@
   .track.solid{stroke-dasharray:none}
   .tdraw{fill:none;stroke:var(--green);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
   .ideal{fill:none;stroke:var(--gold);stroke-width:2.4;stroke-dasharray:5 5;stroke-linecap:round;opacity:.95}
+  .ridemark{fill:#a8543c;stroke:#f4f0e7;stroke-width:2.2}
   .pole.faint{stroke:#cdc4b0}
   .badge-c.faint{fill:#adb0a0}
   svg.trace{touch-action:none}
@@ -195,7 +196,15 @@
   .tabs{display:flex;gap:6px;margin-bottom:10px;background:var(--green-soft);padding:4px;border-radius:11px}
   .tabs button{flex:1;padding:10px;border:none;border-radius:8px;background:transparent;color:var(--green-md);font-weight:500;font-size:13.5px;cursor:pointer;transition:.15s;letter-spacing:.2px}
   .tabs button.active{background:var(--card);color:var(--green-dk)}
+  .tabs.four button{padding:9px 4px;font-size:12.5px}
   .scoreline{font-size:12px;color:var(--muted);text-align:center;margin-top:5px;letter-spacing:.3px}
+  /* Calm / breathwork */
+  .breathe-stage{display:flex;align-items:center;justify-content:center;height:min(46vh,320px);margin:6px 0}
+  .breathe-circle{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 50% 38%,#9fb089,#6f8060);box-shadow:0 10px 40px rgba(79,90,58,.28);display:flex;align-items:center;justify-content:center;transform:scale(.7);transition:transform .6s ease-in-out;will-change:transform}
+  .breathe-label{text-align:center;color:#f4f0e7}
+  .breathe-label span{display:block;font-size:18px;font-weight:500;letter-spacing:.4px}
+  .breathe-label b{display:block;font-size:30px;font-weight:300;margin-top:2px;font-variant-numeric:tabular-nums;min-height:34px}
+  .breathe-tally{text-align:center;font-size:12.5px;color:var(--muted);margin:0 0 12px;min-height:16px;letter-spacing:.3px}
   /* Photo calibration */
   .calib{position:fixed;inset:0;background:#0d2a1d;z-index:80;display:flex;flex-direction:column}
   .calib-top{padding:calc(var(--safe-top) + 14px) 16px 8px;color:#fff;text-align:center}
@@ -231,8 +240,12 @@
   .rotbtn{width:40px;height:34px;border:1px solid var(--line);background:var(--card);border-radius:10px;font-size:18px;line-height:1;color:var(--green-dk);cursor:pointer}
   .rotbtn:active{transform:scale(.96)}
   /* Ribbons */
-  .ribbon-btn{position:absolute;top:calc(var(--safe-top) + 18px);right:16px;background:rgba(255,255,255,.12);border:none;border-radius:999px;padding:4px 12px 4px 6px;display:flex;align-items:center;gap:5px;color:#f2efe6;font-weight:500;font-size:14px;cursor:pointer}
+  .ribbon-btn{position:absolute;top:calc(var(--safe-top) + 16px);right:14px;background:rgba(255,255,255,.12);border:none;border-radius:999px;padding:3px 9px 3px 7px;display:flex;align-items:center;gap:7px;color:#f2efe6;cursor:pointer;min-height:30px}
   .ribbon-btn:active{transform:scale(.96)}
+  .ribbon-btn .rchip{display:flex;align-items:center;gap:2px}
+  .ribbon-btn .rchip i{font-style:normal;font-weight:600;font-size:13px;color:#f2efe6}
+  .ribbon-btn .rchip.dim{opacity:.5}
+  .ribbon-btn .rmore{font-size:12px;font-weight:600;color:var(--gold-lt)}
   .celebrate{position:fixed;inset:0;background:rgba(33,38,30,.7);z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .25s}
   .cel-card{position:relative;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 24px;max-width:330px;width:100%;text-align:center;box-shadow:0 18px 50px rgba(28,26,20,.4)}
   .cel-card .rose{display:inline-block;animation:pop .55s cubic-bezier(.2,1.35,.4,1)}
@@ -276,12 +289,10 @@
     <section class="view" id="view-spatial"></section>
     <!-- BUILDER -->
     <section class="view" id="view-build"></section>
-    <!-- RING GEOGRAPHY -->
-    <section class="view" id="view-ring"></section>
-    <!-- TERMINOLOGY -->
-    <section class="view" id="view-terms"></section>
-    <!-- PATTERNS -->
-    <section class="view" id="view-patterns"></section>
+    <!-- RING IQ (ring geography + patterns + terms + mixed quiz) -->
+    <section class="view" id="view-learn"></section>
+    <!-- CALM (breathwork) -->
+    <section class="view" id="view-calm"></section>
   </main>
 
   <nav id="nav">
@@ -297,17 +308,13 @@
       <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       Build
     </button>
-    <button data-view="ring">
+    <button data-view="learn">
       <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 12h18M12 6v12"/></svg>
-      Ring
+      Ring IQ
     </button>
-    <button data-view="terms">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 10h16"/></svg>
-      Terms
-    </button>
-    <button data-view="patterns">
-      <svg viewBox="0 0 24 24"><path d="M5 19c4-10 10-10 14 0"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></svg>
-      Patterns
+    <button data-view="calm">
+      <svg viewBox="0 0 24 24"><path d="M3 11c3-3.5 6-3.5 9 0s6 3.5 9 0"/><path d="M3 16c3-3.5 6-3.5 9 0s6 3.5 9 0"/></svg>
+      Calm
     </button>
   </nav>
 </div>
@@ -358,8 +365,8 @@ const COURSES = [
       "Trot into the ring, pick up the right-lead canter, and ride one smooth opening circle to settle into an even hunter pace.",
       "Fences 1 and 2 — the outside line down the top rail. Keep the same steady rhythm in and out.",
       "Stay on the right lead and roll back to the right for the diagonal line, 3 to 4.",
-      "Make a smooth flying change to the left lead, then ride the outside line, 5 and 6, down the bottom rail.",
-      "Change back for the turn and finish with the single at 7 up the right side — straight approach, eyes up.",
+      "Change to the left lead — a flying change if you've got it, or a simple change through the trot — then ride the outside line, 5 and 6, down the bottom rail.",
+      "Change back to the right lead for the turn (flying or simple) and finish with the single at 7 up the right side — straight approach, eyes up.",
       "Closing circle, come back to a trot, and leave the ring on a long rein."
     ]
   },
@@ -376,7 +383,7 @@ const COURSES = [
       "Trot in, pick up the left-lead canter, and make one quiet opening circle — ponies show best at a soft, even pace.",
       "Fences 1 and 2 — the outside line along the top rail, soft and even.",
       "Stay on the left lead and turn left to the diagonal line, 3 to 4.",
-      "Make a flying change to the right lead and ride the outside line, 5 and 6, down the bottom rail.",
+      "Change to the right lead — a flying change if she has it, or a simple change through the trot — and ride the outside line, 5 and 6, down the bottom rail.",
       "Finish with the single at 7 up the left side — straight and balanced — then a soft closing circle and a pat.",
     ]
   },
@@ -395,9 +402,9 @@ const COURSES = [
       "Trot in, pick up the right-lead canter, and ride your opening circle to a forward but even hunter pace.",
       "Fences 1 and 2 — the outside line down the top rail.",
       "Roll back to the right for the diagonal line, 3 to 4.",
-      "Make your flying change for the new direction and ride straight to the single at 5 in the middle — balanced and quiet.",
+      "Change for the new direction — flying change if you've got it, otherwise a simple change through the trot — and ride straight to the single at 5 in the middle, balanced and quiet.",
       "Continue to the bottom outside line, 6 and 7, at a steady, even pace.",
-      "Change again for the turn, come up to the single at 8, then a closing circle and trot out."
+      "Change again for the turn (flying or simple), come up to the single at 8, then a closing circle and trot out."
     ]
   },
   {
@@ -415,7 +422,7 @@ const COURSES = [
       "Trot in, pick up the right-lead canter, and open with a balanced circle — derby judges reward a bold, smooth, forward pace.",
       "Fences 1 and 2 — the outside line down the top rail.",
       "Show your handiness: a neat, tight inside turn to the right back to the single at 3.",
-      "Flying change for the new direction, then the diagonal line, 4 to 5 — ride it forward and smooth.",
+      "Change for the new direction — a flying change shows best here, but a quick simple change is fine — then the diagonal line, 4 to 5, forward and smooth.",
       "Come back across to the single at 6 — keep it straight and balanced.",
       "Roll down to the bottom outside line, 7 and 8, then a strong closing circle and trot out."
     ]
@@ -558,12 +565,12 @@ document.querySelectorAll('#nav button').forEach(b=>{
   b.addEventListener('click',()=>{ const v=b.dataset.view; renderView(v); show(v); });
 });
 function renderView(v){
+  stopCalm();              // halt any breathing animation/audio when leaving Calm
   if(v==='courses') renderCourses();
   if(v==='spatial') renderSpatial();
   if(v==='build') renderBuilder();
-  if(v==='ring') renderRing();
-  if(v==='terms') renderTerms();
-  if(v==='patterns') renderPatterns();
+  if(v==='learn') renderLearn();
+  if(v==='calm') renderCalm();
 }
 
 /* ============================ COURSES section ============================ */
@@ -715,6 +722,7 @@ function renderTrace(c){
   // show where the jumps are, but NOT their order — she has to remember it
   c.jumps.forEach((j,i)=>{ h += poleFor(j,jumpDir(c.jumps,i),'faint') + `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="3.5"/>`; });
   h += `<path class="ideal" id="tideal" style="display:none" d="${smoothD(ideal)}"/>`;
+  h += `<circle class="ridemark" id="tdot" r="5.5" style="display:none"/>`;
   h += `<path class="tdraw" id="tdraw" d=""/>`;
   h += `</g></svg></div>`;
   ROT = 0;
@@ -761,8 +769,32 @@ function renderTrace(c){
   svg.addEventListener('touchstart',start,{passive:false});
   svg.addEventListener('touchmove',e=>{e.preventDefault();add(e);},{passive:false});
   svg.addEventListener('touchend',end);
-  el('tclear').addEventListener('click',()=>{pts=[];draw.setAttribute('d','');el('tideal').style.display='none';el('tscore').textContent='';setStatus('Ride the whole track from memory — finger-trace through every fence in the right order.');});
-  el('tshow').addEventListener('click',()=>{const ti=el('tideal');ti.style.display=ti.style.display==='none'?'block':'none';});
+  // A small, low-key marker that travels the ideal line like a horse would.
+  let dotRAF=0;
+  function stopDot(){ if(dotRAF) cancelAnimationFrame(dotRAF); dotRAF=0; const d=el('tdot'); if(d) d.style.display='none'; }
+  function startDot(){
+    const path=el('tideal'), dot=el('tdot'); if(!path||!dot) return;
+    const len=path.getTotalLength(); if(!len) return;
+    dot.style.display='';
+    const dur=4600; // one smooth lap, ms
+    let t0=null;
+    function step(ts){
+      if(!dot.isConnected){ return; }     // view changed — stop cleanly
+      if(t0==null) t0=ts;
+      const d=((ts-t0)/dur)%1*len;
+      const p=path.getPointAtLength(d);
+      dot.setAttribute('cx',p.x.toFixed(1)); dot.setAttribute('cy',p.y.toFixed(1));
+      dotRAF=requestAnimationFrame(step);
+    }
+    dotRAF=requestAnimationFrame(step);
+  }
+  el('tclear').addEventListener('click',()=>{pts=[];draw.setAttribute('d','');el('tideal').style.display='none';stopDot();el('tshow').textContent='Show ideal track';el('tscore').textContent='';setStatus('Ride the whole track from memory — finger-trace through every fence in the right order.');});
+  el('tshow').addEventListener('click',()=>{
+    const ti=el('tideal'); const showing=ti.style.display==='none';
+    ti.style.display=showing?'block':'none';
+    el('tshow').textContent=showing?'Hide ideal track':'Show ideal track';
+    if(showing) startDot(); else stopDot();
+  });
 }
 
 /* ============================ BUILDER section ============================ */
@@ -1027,64 +1059,44 @@ function line(name,visible,x1,y1,x2,y2,interactive){
   if(interactive) s += `<line class="hit" data-name="${name}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
   return s;
 }
-function renderRing(){
-  let h = `<h2 class="title">Ring Geography</h2><p class="sub">Know every line in the ring. These are the lines you'll use to plan your track.</p>`;
-  h += `<div class="ringwrap">${geoSVG(false)}</div>`;
+/* Combines ring geography, patterns, and terminology with one mixed quiz. */
+let flashIdx = 0, flashOrder = [];
+let learnTab = 'ring';
+const LINE_TARGETS = ['rail','centerline','quarter line','diagonal'];
+const LINE_DESC = {
+  'rail':'the fence around the outside of the ring',
+  'centerline':'the line straight down the middle, end to end',
+  'quarter line':'halfway between the centerline and the rail',
+  'diagonal':'corner to corner, for diagonal lines and changes'
+};
+function renderLearn(){
+  let h = `<h2 class="title">Ring IQ</h2><p class="sub">Lines, patterns, and terms — learn them, then test it all in one quiz.</p>`;
+  h += `<div class="tabs four">`
+    + `<button data-lt="ring" class="${learnTab==='ring'?'active':''}">Ring</button>`
+    + `<button data-lt="pat" class="${learnTab==='pat'?'active':''}">Patterns</button>`
+    + `<button data-lt="terms" class="${learnTab==='terms'?'active':''}">Terms</button>`
+    + `<button data-lt="quiz" class="${learnTab==='quiz'?'active':''}">Quiz</button></div>`;
+  h += `<div id="learn-body"></div>`;
+  el('view-learn').innerHTML = h;
+  el('view-learn').querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{ learnTab=b.dataset.lt; renderLearn(); }));
+  if(learnTab==='ring') learnRing();
+  else if(learnTab==='pat') learnPatterns();
+  else if(learnTab==='terms') learnTerms();
+  else renderMixedQuiz();
+}
+function learnRing(){
+  let h = `<div class="ringwrap">${geoSVG(false)}</div>`;
   h += `<div class="card"><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--ink)">
     <li><strong>Rail</strong> — the fence around the outside of the ring.</li>
     <li><strong>Centerline</strong> — runs straight down the middle, end to end.</li>
     <li><strong>Quarter lines</strong> — halfway between the centerline and each rail.</li>
     <li><strong>Diagonals</strong> — corner to corner, used for diagonal lines and changes.</li></ul></div>`;
-  h += `<button class="btn gold" id="goLineQuiz">🎯 Tap-the-line quiz</button>`;
-  el('view-ring').innerHTML = h;
-  el('goLineQuiz').addEventListener('click',renderLineQuiz);
+  el('learn-body').innerHTML = h;
 }
-const LINE_TARGETS = ['rail','centerline','quarter line','diagonal'];
-function renderLineQuiz(){
-  let order = LINE_TARGETS.slice(); shuffle(order);
-  let idx=0, correct=0, answered=false;
-  function draw(){
-    let h = `<button class="back" id="bk">‹ Ring geography</button>`;
-    h += `<div class="status" id="lstatus">Tap the <strong>${order[idx]}</strong></div>`;
-    h += `<div class="ringwrap">${geoSVG(true)}</div>`;
-    h += `<div class="scoreline">Question ${idx+1} of ${order.length} · Score ${correct}</div>`;
-    el('view-ring').innerHTML = h;
-    el('bk').addEventListener('click',renderRing);
-    const svg = el('gsvg');
-    svg.querySelectorAll('.hit').forEach(hit=>{
-      hit.addEventListener('click',()=>{
-        if(answered) return; answered=true;
-        const name = hit.dataset.name;
-        const want = order[idx];
-        const advance=()=>{ idx++; answered=false; if(idx>=order.length){ finishLineQuiz(correct,order.length); } else draw(); };
-        if(name===want){ correct++; flashResult(true,`Yes! That's the ${want}. ✔`,'',advance); }
-        else { flashResult(false,`That's the ${name}.`,`You wanted the ${want} — try to picture where it runs in the ring.`, advance); }
-      });
-    });
-  }
-  draw();
+function learnPatterns(){
+  el('learn-body').innerHTML = PATTERNS.map(p=>`<div class="pat"><h3>${esc(p.n)}</h3>${p.svg}<div class="cue">${esc(p.cue)}</div></div>`).join('');
 }
-function finishLineQuiz(correct,total){
-  let h = `<button class="back" id="bk">‹ Ring geography</button>`;
-  h += `<div class="card" style="text-align:center"><div style="font-size:40px">${correct===total?'🏆':'🐴'}</div>
-    <h2 class="title" style="margin-top:6px">You got ${correct} / ${total}</h2>
-    <p class="sub">${correct===total?'Perfect! You know your ring lines.':'Great practice — run it again to ace it.'}</p>
-    <button class="btn gold" id="again">Try again</button></div>`;
-  el('view-ring').innerHTML = h;
-  el('bk').addEventListener('click',renderRing);
-  el('again').addEventListener('click',renderLineQuiz);
-  awardRibbon(placeByScore(correct,total),'Ring lines',`Tap-the-line quiz — ${correct}/${total}`);
-}
-
-/* ============================ TERMINOLOGY section ============================ */
-let flashIdx = 0, flashOrder = [];
-function renderTerms(){
-  let h = `<h2 class="title">Terminology</h2><p class="sub">Flip the flashcards to learn, then test yourself.</p>`;
-  h += `<div class="tabs"><button id="t-cards" class="active">🗂 Flashcards</button><button id="t-quiz">🎯 Quiz</button></div>`;
-  h += `<div id="terms-body"></div>`;
-  el('view-terms').innerHTML = h;
-  el('t-cards').addEventListener('click',()=>{el('t-cards').classList.add('active');el('t-quiz').classList.remove('active');renderFlash();});
-  el('t-quiz').addEventListener('click',()=>{el('t-quiz').classList.add('active');el('t-cards').classList.remove('active');renderTermQuiz();});
+function learnTerms(){
   flashOrder = TERMS.map((_,i)=>i); flashIdx=0;
   renderFlash();
 }
@@ -1096,50 +1108,89 @@ function renderFlash(){
     <div class="flash-face flash-back"><div class="t2">${esc(term.t)}</div><div class="def">${esc(term.d)}</div></div>
   </div></div>`;
   h += `<div class="btn-row"><button class="btn ghost" id="fprev">‹ Prev</button><button class="btn ghost" id="fshuf">Shuffle</button><button class="btn" id="fnext">Next ›</button></div>`;
-  el('terms-body').innerHTML = h;
+  el('learn-body').innerHTML = h;
   el('flash').addEventListener('click',()=>el('flash').classList.toggle('flipped'));
   el('fprev').addEventListener('click',()=>{flashIdx=(flashIdx-1+TERMS.length)%TERMS.length;renderFlash();});
   el('fnext').addEventListener('click',()=>{flashIdx=(flashIdx+1)%TERMS.length;renderFlash();});
   el('fshuf').addEventListener('click',()=>{shuffle(flashOrder);flashIdx=0;renderFlash();toast('Shuffled!');});
 }
-function renderTermQuiz(){
-  let order = TERMS.map((_,i)=>i); shuffle(order); order=order.slice(0,10);
+
+/* ---- Unified quiz: mixes line-tap, pattern, and term questions ---- */
+function buildMixedQuiz(){
+  const qs=[];
+  const lines=LINE_TARGETS.slice(); shuffle(lines);
+  lines.slice(0,3).forEach(t=>qs.push({kind:'line',target:t}));
+  const pidx=PATTERNS.map((_,i)=>i); shuffle(pidx);
+  pidx.slice(0,3).forEach(pi=>qs.push({kind:'pattern',pi}));
+  const tidx=TERMS.map((_,i)=>i); shuffle(tidx);
+  tidx.slice(0,3).forEach(ti=>qs.push({kind:'term',ti}));
+  shuffle(qs);
+  return qs;
+}
+function renderMixedQuiz(){
+  const qs=buildMixedQuiz();
   let idx=0, score=0, answered=false;
-  function draw(){
-    const ti = order[idx]; const term = TERMS[ti];
-    // options: correct term + 3 distractors
-    let opts=[ti]; const pool=TERMS.map((_,i)=>i).filter(i=>i!==ti); shuffle(pool);
-    opts=opts.concat(pool.slice(0,3)); shuffle(opts);
-    let h = `<div class="counter">Question ${idx+1} of ${order.length} · Score ${score}</div>`;
-    h += `<div class="q-prompt"><span class="tag">Which term means…</span>${esc(term.d)}</div>`;
-    h += opts.map(o=>`<button class="opt" data-i="${o}">${esc(TERMS[o].t)}</button>`).join('');
-    el('terms-body').innerHTML = h;
-    answered=false;
-    el('terms-body').querySelectorAll('.opt').forEach(btn=>{
+  const counter=()=>`<div class="counter">Question ${idx+1} of ${qs.length} · Score ${score}</div>`;
+  const advance=()=>{ idx++; answered=false; if(idx>=qs.length) finishMixedQuiz(score,qs.length); else draw(); };
+  function wireOpts(correctI, labelFn, why){
+    el('learn-body').querySelectorAll('.opt').forEach(btn=>{
       btn.addEventListener('click',()=>{
         if(answered) return; answered=true;
         const chosen=+btn.dataset.i;
-        el('terms-body').querySelectorAll('.opt').forEach(b=>{
-          b.disabled=true;
-          if(+b.dataset.i===ti) b.classList.add('correct');
-          else if(b===btn) b.classList.add('wrong');
-        });
-        const advance=()=>{ idx++; if(idx>=order.length) finishTermQuiz(score,order.length); else draw(); };
-        if(chosen===ti){ score++; flashResult(true,'Correct! 🎉','',advance); }
-        else { flashResult(false, `It's “${TERMS[ti].t}”.`, TERMS[ti].d, advance); }
+        el('learn-body').querySelectorAll('.opt').forEach(b=>{ b.disabled=true;
+          if(+b.dataset.i===correctI) b.classList.add('correct');
+          else if(b===btn) b.classList.add('wrong'); });
+        if(chosen===correctI){ score++; flashResult(true,'Correct! 🎉','',advance); }
+        else { flashResult(false,`It's “${labelFn(correctI)}”.`,why,advance); }
       });
     });
   }
+  function draw(){
+    const q=qs[idx];
+    if(q.kind==='line'){
+      let h=counter();
+      h+=`<div class="status">Tap the <strong>${q.target}</strong></div>`;
+      h+=`<div class="ringwrap">${geoSVG(true)}</div>`;
+      el('learn-body').innerHTML=h;
+      el('gsvg').querySelectorAll('.hit').forEach(hit=>{
+        hit.addEventListener('click',()=>{
+          if(answered) return; answered=true;
+          const name=hit.dataset.name;
+          if(name===q.target){ score++; flashResult(true,`Yes — that's the ${q.target}. ✔`,'',advance); }
+          else { flashResult(false,`That's the ${name}.`,`You wanted the ${q.target} — ${LINE_DESC[q.target]}.`,advance); }
+        });
+      });
+    } else if(q.kind==='pattern'){
+      const p=PATTERNS[q.pi];
+      let opts=[q.pi]; const pool=PATTERNS.map((_,i)=>i).filter(i=>i!==q.pi); shuffle(pool);
+      opts=opts.concat(pool.slice(0,3)); shuffle(opts);
+      let h=counter();
+      h+=`<div class="q-prompt"><span class="tag">Which pattern is this?</span></div>`;
+      h+=`<div class="ringwrap" style="max-width:250px">${p.svg}</div>`;
+      h+=opts.map(o=>`<button class="opt" data-i="${o}">${esc(PATTERNS[o].n)}</button>`).join('');
+      el('learn-body').innerHTML=h;
+      wireOpts(q.pi, i=>PATTERNS[i].n, p.cue);
+    } else {
+      const term=TERMS[q.ti];
+      let opts=[q.ti]; const pool=TERMS.map((_,i)=>i).filter(i=>i!==q.ti); shuffle(pool);
+      opts=opts.concat(pool.slice(0,3)); shuffle(opts);
+      let h=counter();
+      h+=`<div class="q-prompt"><span class="tag">Which term means…</span>${esc(term.d)}</div>`;
+      h+=opts.map(o=>`<button class="opt" data-i="${o}">${esc(TERMS[o].t)}</button>`).join('');
+      el('learn-body').innerHTML=h;
+      wireOpts(q.ti, i=>TERMS[i].t, term.d);
+    }
+  }
   draw();
 }
-function finishTermQuiz(score,total){
+function finishMixedQuiz(score,total){
   let h = `<div class="card" style="text-align:center"><div style="font-size:40px">${score===total?'🏆':(score>=total*0.7?'🌟':'🐴')}</div>
     <h2 class="title" style="margin-top:6px">${score} / ${total} correct</h2>
-    <p class="sub">${score===total?'Flawless — you know your terms!':'Nice work — flip through the cards and try again.'}</p>
-    <button class="btn gold" id="tagain">Try again</button></div>`;
-  el('terms-body').innerHTML = h;
-  el('tagain').addEventListener('click',renderTermQuiz);
-  awardRibbon(placeByScore(score,total),'Terminology',`Terms quiz — ${score}/${total}`);
+    <p class="sub">${score===total?'Perfect round — you really know your ring!':'Nice work — review the tabs and run it again.'}</p>
+    <button class="btn gold" id="qagain">Try again</button></div>`;
+  el('learn-body').innerHTML = h;
+  el('qagain').addEventListener('click',renderMixedQuiz);
+  awardRibbon(placeByScore(score,total),'Ring IQ',`Mixed quiz — ${score}/${total}`);
 }
 
 /* ============================ SPATIAL section ============================ */
@@ -1300,22 +1351,119 @@ function mPole(x,y,ang){const L=12;const r=ang*Math.PI/180;const dx=Math.cos(r)*
 function mNum(x,y,n){return `<circle cx="${x}" cy="${y}" r="8" fill="#3f4a3a"/><text x="${x}" y="${y}" fill="#fff" font-size="10" font-weight="800" text-anchor="middle" dominant-baseline="central">${n}</text>`;}
 function mTrack(d){return `<path d="${d}" fill="none" stroke="#76806a" stroke-width="2.4" stroke-dasharray="6 5" stroke-linecap="round" marker-end="url(#pa)"/>`;}
 const PAT_DEFS = `<defs><marker id="pa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#76806a"/></marker></defs>`;
-function renderPatterns(){
-  const pats = [
-    {n:"Outside Line", cue:"Two jumps in a straight line along the rail. Ride straight, keep an even pace, and count the same number of strides every time.",
-     svg:miniSVG(PAT_DEFS+mTrack("M120 130 L120 25")+mPole(120,100,0)+mNum(105,100,1)+mPole(120,55,0)+mNum(105,55,2))},
-    {n:"Diagonal Line", cue:"Two jumps set across the ring corner-to-corner. Make your turn early so you meet the first jump straight, then ride through to the second.",
-     svg:miniSVG(PAT_DEFS+mTrack("M40 125 L200 35")+mPole(95,94,-29)+mNum(108,80,1)+mPole(150,64,-29)+mNum(163,50,2))},
-    {n:"Single", cue:"One jump on its own. Set up early, find a straight approach, and keep your eyes up past the fence.",
-     svg:miniSVG(PAT_DEFS+mTrack("M120 130 C120 90 120 90 120 40")+mPole(120,75,0)+mNum(138,75,1))},
-    {n:"Bending Line", cue:"The two jumps aren't straight in line. Ride a smooth curve between them so you meet each one straight — don't cut it sharp.",
-     svg:miniSVG(PAT_DEFS+mTrack("M70 130 C70 95 150 95 175 45")+mPole(70,100,0)+mNum(52,100,1)+mPole(168,62,-32)+mNum(182,50,2))},
-    {n:"Opening / Closing Circle", cue:"A circle before fence 1 to set your pace, and one after the last fence to finish smoothly. Make them round and balanced.",
-     svg:miniSVG(PAT_DEFS+`<circle cx="80" cy="75" r="40" fill="none" stroke="#76806a" stroke-width="2.4" stroke-dasharray="6 5"/>`+mTrack("M118 70 L200 70")+mPole(170,70,90)+mNum(170,52,1)+`<text x="80" y="78" fill="#3f4a3a" font-size="11" font-weight="700" text-anchor="middle">circle</text>`)}
-  ];
-  let h = `<h2 class="title">Practice Patterns</h2><p class="sub">The shapes that show up in every course. Learn the cue for each one.</p>`;
-  h += pats.map(p=>`<div class="pat"><h3>${p.n}</h3>${p.svg}<div class="cue">${esc(p.cue)}</div></div>`).join('');
-  el('view-patterns').innerHTML = h;
+const PATTERNS = [
+  {n:"Outside Line", cue:"Two jumps in a straight line along the rail. Ride straight, keep an even pace, and count the same number of strides every time.",
+   svg:miniSVG(PAT_DEFS+mTrack("M120 130 L120 25")+mPole(120,100,0)+mNum(105,100,1)+mPole(120,55,0)+mNum(105,55,2))},
+  {n:"Diagonal Line", cue:"Two jumps set across the ring corner-to-corner. Make your turn early so you meet the first jump straight, then ride through to the second.",
+   svg:miniSVG(PAT_DEFS+mTrack("M40 125 L200 35")+mPole(95,94,-29)+mNum(108,80,1)+mPole(150,64,-29)+mNum(163,50,2))},
+  {n:"Single", cue:"One jump on its own. Set up early, find a straight approach, and keep your eyes up past the fence.",
+   svg:miniSVG(PAT_DEFS+mTrack("M120 130 C120 90 120 90 120 40")+mPole(120,75,0)+mNum(138,75,1))},
+  {n:"Bending Line", cue:"The two jumps aren't straight in line. Ride a smooth curve between them so you meet each one straight — don't cut it sharp.",
+   svg:miniSVG(PAT_DEFS+mTrack("M70 130 C70 95 150 95 175 45")+mPole(70,100,0)+mNum(52,100,1)+mPole(168,62,-32)+mNum(182,50,2))},
+  {n:"Opening / Closing Circle", cue:"A circle before fence 1 to set your pace, and one after the last fence to finish smoothly. Make them round and balanced.",
+   svg:miniSVG(PAT_DEFS+`<circle cx="80" cy="75" r="40" fill="none" stroke="#76806a" stroke-width="2.4" stroke-dasharray="6 5"/>`+mTrack("M118 70 L200 70")+mPole(170,70,90)+mNum(170,52,1)+`<text x="80" y="78" fill="#3f4a3a" font-size="11" font-weight="700" text-anchor="middle">circle</text>`)}
+];
+
+/* ============================ CALM (breathwork) section ============================ */
+const BREATH_PATTERNS = {
+  box:    {name:'Box Breathing', phases:[['Breathe in',4],['Hold',4],['Breathe out',4],['Hold',4]], blurb:'Even 4-4-4-4 breaths. Steadies a racing heart before you go in.'},
+  relax:  {name:'4·7·8 Relax', phases:[['Breathe in',4],['Hold',7],['Breathe out',8]], blurb:'A longer out-breath tells your body it’s safe to calm down.'},
+  settle: {name:'Settle', phases:[['Breathe in',4],['Breathe out',6]], blurb:'Simple in-4, out-6. Easy to do on your horse at the gate.'}
+};
+let calm = null; // active breathing engine
+function stopCalm(){ if(calm){ calm.stop(); calm=null; } }
+function renderCalm(){
+  const key = (calm && calm.key) || 'box';
+  let h = `<h2 class="title">Calm</h2><p class="sub">Nervous before you ride? Pick a breathing pattern and follow the circle. Slow breathing settles the nerves.</p>`;
+  h += `<div class="tabs">` + Object.keys(BREATH_PATTERNS).map(k=>
+        `<button data-bk="${k}" class="${k===key?'active':''}">${esc(BREATH_PATTERNS[k].name)}</button>`).join('') + `</div>`;
+  h += `<p class="sub" id="calmBlurb" style="text-align:center;margin:0 0 12px">${esc(BREATH_PATTERNS[key].blurb)}</p>`;
+  h += `<div class="breathe-stage">
+      <div class="breathe-circle" id="bcircle"><div class="breathe-label"><span id="bphase">Ready?</span><b id="bcount"></b></div></div>
+    </div>`;
+  h += `<p class="breathe-tally" id="btally"></p>`;
+  h += `<div class="btn-row"><button class="btn ghost" id="bsound">🔇 Sound off</button><button class="btn gold" id="bstart">Start</button></div>`;
+  el('view-calm').innerHTML = h;
+  el('view-calm').querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{ stopCalm(); calm=makeBreather(b.dataset.bk); renderCalm(); }));
+  el('bstart').addEventListener('click',()=>{ if(!calm) calm=makeBreather(key); calm.toggle(); });
+  el('bsound').addEventListener('click',()=>{ if(!calm) calm=makeBreather(key); calm.toggleSound(); });
+  // restore engine reference into the fresh DOM
+  if(calm){ calm.attach(); }
+}
+/* A self-contained breathing engine: drives the circle, phase label, counts,
+   and an optional gentle WebAudio tone. No dependencies. */
+function makeBreather(key){
+  const cfg = BREATH_PATTERNS[key];
+  let running=false, soundOn=false, phaseI=0, timer=0, tick=0, laps=0;
+  let actx=null, master=null, osc=null;
+  function setLabel(t){ const e=el('bphase'); if(e) e.textContent=t; }
+  function setCount(n){ const e=el('bcount'); if(e) e.textContent=n||''; }
+  function setTally(){ const e=el('btally'); if(e) e.textContent = laps? `${laps} breath${laps===1?'':'s'} done — nicely done.` : ''; }
+  function setSoundBtn(){ const b=el('bsound'); if(b) b.textContent = soundOn?'🔊 Sound on':'🔇 Sound off'; }
+  function setStartBtn(){ const b=el('bstart'); if(b) b.textContent = running?'Pause':'Start'; }
+  function circle(){ return el('bcircle'); }
+  function applyPhase(){
+    const [label,secs]=cfg.phases[phaseI];
+    setLabel(label);
+    const c=circle();
+    if(c){
+      c.style.transitionDuration = secs+'s';
+      // grow on inhale, shrink on exhale; on a hold, keep the current size
+      if(label==='Breathe in') c.style.transform='scale(1)';
+      else if(label==='Breathe out') c.style.transform='scale(0.55)';
+    }
+    breathTone(label,secs);
+    let remain=secs; setCount(remain);
+    clearInterval(tick);
+    tick=setInterval(()=>{ remain--; if(remain>=1) setCount(remain); }, 1000);
+    timer=setTimeout(()=>{
+      phaseI++;
+      if(phaseI>=cfg.phases.length){ phaseI=0; laps++; setTally(); }
+      if(running) applyPhase();
+    }, secs*1000);
+  }
+  function start(){
+    if(running) return; running=true; setStartBtn();
+    const c=circle(); if(c){ c.style.transitionDuration='0.3s'; c.style.transform='scale(0.55)'; }
+    phaseI=0; setTimeout(()=>{ if(running) applyPhase(); }, 320);
+  }
+  function pause(){
+    running=false; setStartBtn(); clearTimeout(timer); clearInterval(tick);
+    setLabel('Paused'); setCount(''); stopTone();
+    const c=circle(); if(c){ c.style.transitionDuration='0.6s'; c.style.transform='scale(0.7)'; }
+  }
+  function toggle(){ running?pause():start(); }
+  function stop(){ running=false; clearTimeout(timer); clearInterval(tick); stopTone(); if(actx){ try{actx.close();}catch(e){} actx=null; } }
+  // --- gentle audio: a soft sine that swells on inhale, fades on exhale ---
+  function ensureAudio(){
+    if(actx) return;
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+      actx=new AC(); master=actx.createGain(); master.gain.value=0; master.connect(actx.destination);
+      osc=actx.createOscillator(); osc.type='sine'; osc.frequency.value=174; // low, soothing
+      const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=500;
+      osc.connect(lp); lp.connect(master); osc.start();
+    }catch(e){ actx=null; }
+  }
+  function breathTone(label,secs){
+    if(!soundOn||!actx||!master) return;
+    const now=actx.currentTime, g=master.gain;
+    g.cancelScheduledValues(now);
+    if(label==='Breathe in'){ g.setValueAtTime(g.value,now); g.linearRampToValueAtTime(0.05,now+secs); }
+    else if(label==='Breathe out'){ g.setValueAtTime(g.value,now); g.linearRampToValueAtTime(0.0,now+secs); }
+    else { g.setValueAtTime(g.value,now); } // hold: steady
+  }
+  function stopTone(){ if(actx&&master){ const now=actx.currentTime; master.gain.cancelScheduledValues(now); master.gain.linearRampToValueAtTime(0,now+0.4); } }
+  function toggleSound(){
+    soundOn=!soundOn; setSoundBtn();
+    if(soundOn){ ensureAudio(); if(actx&&actx.state==='suspended') actx.resume(); }
+    else stopTone();
+  }
+  function attach(){ // re-sync button labels/tally after a re-render
+    setSoundBtn(); setStartBtn(); setTally();
+    if(!running){ setLabel('Ready?'); setCount(''); }
+  }
+  return { key, toggle, toggleSound, stop, attach };
 }
 
 /* ============================ Utility ============================ */
@@ -1342,7 +1490,17 @@ function placeByScore(score,total){
   if(score>=Math.floor(total*0.6)) return 3;
   return 0;
 }
-function updateRibbonBtn(){ const b=el('ribbonBtn'); if(b) b.innerHTML = `${ribbonSVG(1,20)}<span>${getRibbons().length}</span>`; }
+function updateRibbonBtn(){
+  const b=el('ribbonBtn'); if(!b) return;
+  const list=getRibbons(); const counts={};
+  list.forEach(r=>counts[r.p]=(counts[r.p]||0)+1);
+  const places=[1,2,3,4,5,6].filter(p=>counts[p]);
+  if(!places.length){ b.innerHTML=`<span class="rchip dim">${ribbonSVG(1,17)}</span>`; return; }
+  const show=places.slice(0,4);
+  let s=show.map(p=>`<span class="rchip">${ribbonSVG(p,17)}<i>${counts[p]}</i></span>`).join('');
+  if(places.length>4) s+=`<span class="rmore">+${places.length-4}</span>`;
+  b.innerHTML=s;
+}
 function awardRibbon(place,activity,detail){
   if(!place||place<1) return;
   const list=getRibbons();
