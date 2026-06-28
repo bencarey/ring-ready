@@ -958,7 +958,7 @@ function openRingEditor(mode){
   const ov=document.createElement('div'); ov.className='bfull';
   const msg = draw ? 'Trace the line you’d ride — through the fences, in order'
                    : 'Tap each fence in order (tap again to remove) · drag the in-gate to any rail';
-  const rot = draw ? '' : `<div class="rotrow bfull-rot"><span>Rotate</span><button class="rotbtn" id="bfrotL" title="Rotate left">⟲</button><button class="rotbtn" id="bfrotR" title="Rotate right">⟳</button></div>`;
+  const rot = `<div class="rotrow bfull-rot"><span>Rotate for a bigger view</span><button class="rotbtn" id="bfrotL" title="Rotate left">⟲</button><button class="rotbtn" id="bfrotR" title="Rotate right">⟳</button></div>`;
   const bar = draw
     ? `<button class="btn ghost sm" id="bfclear">${buildPath?'Clear':'Smart line'}</button><button class="btn sm" id="bfdone">Done</button>`
     : `<div class="bfgates">`+['b','t','l','r'].map(s=>`<button class="gatebtn${buildGate.side===s?' on':''}" data-side="${s}">${GATE_NAMES[s]}</button>`).join('')+`</div><button class="btn sm" id="bfdone">Done</button>`;
@@ -973,8 +973,9 @@ function openRingEditor(mode){
   if(el('bfdone')) el('bfdone').onclick=done;
   if(el('bfclear')) el('bfclear').onclick=()=>{ buildPath=null; refreshBuildRing('draw','bfwrap'); const c=el('bfclear'); if(c) c.textContent='Smart line'; };
   ov.querySelectorAll('.bfgates .gatebtn').forEach(b=>b.addEventListener('click',()=>{ buildGate={side:b.dataset.side,frac:buildGate.frac}; ov.querySelectorAll('.bfgates .gatebtn').forEach(x=>x.classList.toggle('on',x===b)); redrawGate(); }));
-  if(el('bfrotL')) el('bfrotL').onclick=()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing('jumps','bfwrap'); };
-  if(el('bfrotR')) el('bfrotR').onclick=()=>{ buildRot=(buildRot+90)%360; refreshBuildRing('jumps','bfwrap'); };
+  const reMode = draw?'draw':'jumps';
+  if(el('bfrotL')) el('bfrotL').onclick=()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(reMode,'bfwrap'); };
+  if(el('bfrotR')) el('bfrotR').onclick=()=>{ buildRot=(buildRot+90)%360; refreshBuildRing(reMode,'bfwrap'); };
 }
 function buildRingSVG(){
   ROT = buildRot;
