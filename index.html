@@ -45,7 +45,7 @@
     -webkit-font-smoothing:antialiased;
     overscroll-behavior-y:none;
   }
-  #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;background:var(--cream);overflow:hidden}
+  #app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;flex-direction:column;background:var(--cream);overflow:hidden}
   /* Header */
   header{
     background:var(--green-dk);
@@ -1438,8 +1438,19 @@ init();
 
 /* ============================ Service worker ============================ */
 if('serviceWorker' in navigator){
+  let reloaded=false;
+  // When a new service worker takes control, reload once so the latest app shows.
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(reloaded) return; reloaded=true; location.reload(); });
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // The SW calls skipWaiting(), so a new version activates on its own and
+      // fires controllerchange (handled above) to reload. We just need to poll
+      // for updates: on launch, and whenever the app returns to the foreground.
+      const check=()=>{ reg.update().catch(()=>{}); };
+      check();
+      document.addEventListener('visibilitychange',()=>{ if(!document.hidden) check(); });
+      window.addEventListener('pageshow',e=>{ if(e.persisted) check(); });
+    }).catch(()=>{});
   });
 }
 </script>
