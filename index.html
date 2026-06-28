@@ -514,11 +514,16 @@ function setName(n){localStorage.setItem('rr_name',n);}
 function getSaved(){try{return JSON.parse(localStorage.getItem('rr_courses')||'[]');}catch(e){return [];}}
 function setSaved(a){localStorage.setItem('rr_courses',JSON.stringify(a));}
 function allCourses(){return COURSES.concat(getSaved());}
+/* User-built courses (id starts with 'u') store fences as bare points, so the
+   inferred jump "pole" can mis-align — show just the numbered marker for them. */
+function isCustom(c){ return !!(c && c.id && String(c.id)[0]==='u'); }
 
 /* ---- SVG building blocks ---- */
 function ringFrameSVG(opts){
   opts = opts||{};
   let s = `<rect class="ring-foot" x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" rx="14"/>`;
+  // optional posted-course photo as a faded backdrop, sitting on the ring floor
+  if(opts.photo) s += `<image x="${RING.x0}" y="${RING.y0}" width="${RING.x1-RING.x0}" height="${RING.y1-RING.y0}" preserveAspectRatio="xMidYMid meet" opacity="${opts.photoOp!=null?opts.photoOp:0.55}" href="${opts.photo}"/>`;
   if(opts.center) s += `<line class="gline dash" x1="${RING.x0}" y1="120" x2="${RING.x1}" y2="120"/>`;
   if(opts.quarter){
     s += `<line class="gline dash gold" x1="${RING.x0}" y1="70" x2="${RING.x1}" y2="70"/>`;
@@ -607,17 +612,17 @@ function badge(j,n,rot){
 }
 
 /* Build a full course study diagram */
-function courseStudySVG(c){
+function courseStudySVG(c, showPhoto){
   ROT = getRot(c.id);
   const path = c.path || c.jumps.map(j=>[j.x,j.y]);
   const sx=path[0][0], sy=path[0][1];
   let s = `<svg class="ring" viewBox="${ringVB(ROT)}"><defs><marker id="arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#76806a"/></marker></defs>`;
   s += `<g transform="rotate(${ROT} 180 120)">`;
-  s += ringFrameSVG({gate:true,gateFrac:c.gate});
+  s += ringFrameSVG({gate:true,gateFrac:c.gate, photo:(showPhoto&&c.photo)?c.photo:null, photoOp:0.6});
   s += `<path class="track" marker-end="url(#arr)" d="${smoothD(path)}"/>`;
   s += `<circle class="startdot" cx="${sx}" cy="${sy}" r="4"/>`;
   s += `<text class="lbl" x="${sx-4}" y="${sy-8}" transform="rotate(${-ROT} ${sx-4} ${sy-8})">start</text>`;
-  c.jumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(c.jumps,i)) + badge(j,j.n); });
+  c.jumps.forEach((j,i)=>{ s += (isCustom(c)?'':poleFor(j,jumpDir(c.jumps,i))) + badge(j,j.n); });
   s += `</g></svg>`;
   ROT = 0;
   return s;
@@ -694,21 +699,18 @@ function setTab(which){
   el('tab-trace').classList.toggle('active',which==='trace');
   el('tab-quiz').classList.toggle('active',which==='quiz');
 }
+let studyPhotoOn = true;   // show the posted-course photo as a backdrop by default
 function renderStudy(c){
   const steps = c.steps || c.jumps.map((j,i)=> i===0?`Open with a circle, then ride to fence 1.`:`Continue to fence ${j.n}.`);
-  let h = `<div class="ringwrap" style="max-width:280px">${courseStudySVG(c)}</div>`;
+  const showPhoto = !!(c.photo && studyPhotoOn);
+  let h = `<div class="ringwrap" style="max-width:280px">${courseStudySVG(c, showPhoto)}</div>`;
   if(c.photo){
-    h += `<button class="btn ghost sm" id="viewPhoto" style="margin-bottom:10px">📷 View the posted course</button>`;
-    h += `<div id="photoBox" style="display:none;margin-bottom:12px"><img src="${c.photo}" alt="Posted course" style="width:100%;border-radius:14px;box-shadow:var(--shadow)"></div>`;
+    h += `<button class="btn ghost sm" id="viewPhoto" style="margin-bottom:10px">${studyPhotoOn?'🙈 Hide photo':'📷 Show photo'}</button>`;
   }
   h += `<div class="card" style="padding:13px"><strong style="color:var(--green-dk);font-size:14px">Ride it like this</strong>`
      + `<ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>`;
   el('course-body').innerHTML = h;
-  if(c.photo) el('viewPhoto').addEventListener('click',()=>{
-    const b=el('photoBox'); const open=b.style.display==='none';
-    b.style.display=open?'block':'none';
-    el('viewPhoto').textContent=open?'📷 Hide the posted course':'📷 View the posted course';
-  });
+  if(c.photo) el('viewPhoto').addEventListener('click',()=>{ studyPhotoOn=!studyPhotoOn; renderStudy(c); });
 }
 
 /* Quiz: tap jumps in order */
@@ -717,7 +719,7 @@ function renderQuiz(c){
   let h = `<div class="status" id="qstatus">Tap the jumps in the correct order. Start with fence 1.</div>`;
   h += `<div class="ringwrap"><svg class="ring" viewBox="${ringVB(rotq)}" id="qsvg"><g transform="rotate(${rotq} 180 120)">`;
   h += ringFrameSVG({gate:true,gateFrac:c.gate});
-  c.jumps.forEach((j,i)=>{ h += `<g id="qj-${i}">`+poleFor(j,jumpDir(c.jumps,i),'dim')+`<circle cx="${j.x}" cy="${j.y}" r="11" fill="transparent"/></g>`; });
+  c.jumps.forEach((j,i)=>{ h += `<g id="qj-${i}">`+(isCustom(c)?`<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="5"/>`:poleFor(j,jumpDir(c.jumps,i),'dim'))+`<circle cx="${j.x}" cy="${j.y}" r="11" fill="transparent"/></g>`; });
   h += `</g></svg></div>`;
   ROT = 0;
   h += `<div class="btn-row"><button class="btn ghost" id="qreset">Restart</button><button class="btn gold" id="qpeek">Show me</button></div>`;
@@ -789,7 +791,7 @@ function renderTrace(c){
   h += `<circle class="startdot" cx="${sx}" cy="${sy}" r="4"/>`;
   h += `<text class="lbl" x="${sx-4}" y="${sy-8}" transform="rotate(${-rott} ${sx-4} ${sy-8})">start</text>`;
   // show where the jumps are, but NOT their order — she has to remember it
-  c.jumps.forEach((j,i)=>{ h += poleFor(j,jumpDir(c.jumps,i),'faint') + `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="3.5"/>`; });
+  c.jumps.forEach((j,i)=>{ h += (isCustom(c)?'':poleFor(j,jumpDir(c.jumps,i),'faint')) + `<circle class="badge-c faint" cx="${j.x}" cy="${j.y}" r="3.5"/>`; });
   h += `<path class="ideal" id="tideal" style="display:none" d="${smoothD(ideal)}"/>`;
   h += `<circle class="ridemark" id="tdot" r="5.5" style="display:none"/>`;
   h += `<path class="tdraw" id="tdraw" d=""/>`;
@@ -1201,11 +1203,27 @@ function drawBuildJumps(){
   let s = '';
   // only show the line the rider actually drew — no auto-inferred line in the builder
   if(buildPath && buildPath.length>1) s += `<path class="track solid" d="${smoothD(buildPath)}"/>`;
-  buildJumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(buildJumps,i)) + badge(j,j.n); });
+  buildJumps.forEach((j)=>{ s += badge(j,j.n); });   // just the numbered marker — no inferred pole line
   g.innerHTML = s;
   ROT = 0;
   const hint=el('bhint'); if(hint) hint.textContent = buildJumps.length===0 ? (buildPhoto?'Photo lined up — now tap each numbered jump on the picture, in order.':'0 jumps placed — tap inside the ring to start.')
     : `${buildJumps.length} jump${buildJumps.length===1?'':'s'} placed. Tap a jump to remove it.`;
+}
+/* Tidy a finger-drawn path: drop closely-spaced points (de-jitter), then a
+   couple of light smoothing passes. Minor corrections only — the shape stays. */
+function cleanPath(raw){
+  if(raw.length<3) return raw.slice();
+  let pts=[raw[0]];
+  for(let i=1;i<raw.length-1;i++){ const last=pts[pts.length-1]; if(Math.hypot(raw[i][0]-last[0],raw[i][1]-last[1])>=10) pts.push(raw[i]); }
+  pts.push(raw[raw.length-1]);
+  for(let pass=0;pass<2;pass++){
+    if(pts.length<3) break;
+    const out=[pts[0]];
+    for(let i=1;i<pts.length-1;i++) out.push([ (pts[i-1][0]+2*pts[i][0]+pts[i+1][0])/4, (pts[i-1][1]+2*pts[i][1]+pts[i+1][1])/4 ]);
+    out.push(pts[pts.length-1]);
+    pts=out;
+  }
+  return pts.map(p=>[Math.round(p[0]*10)/10, Math.round(p[1]*10)/10]);
 }
 /* Step 3: finger-draw the ideal line; points are clamped inside the ring. */
 function setupBuildDraw(svg){
@@ -1218,7 +1236,7 @@ function setupBuildDraw(svg){
   function start(e){ e.preventDefault(); drawing=true; pts=[P(e)]; if(e.pointerId!=null&&svg.setPointerCapture){try{svg.setPointerCapture(e.pointerId);}catch(_){}} render(); }
   function add(e){ if(!drawing) return; e.preventDefault(); pts.push(P(e)); render(); }
   function end(){ if(!drawing) return; drawing=false;
-    if(pts.length>2){ buildPath=pts.slice(); }
+    if(pts.length>2){ buildPath=cleanPath(pts); }
     draw.setAttribute('d',''); drawBuildJumps();
     const bf=el('bfclear'); if(bf) bf.textContent = buildPath?'Clear':'Smart line';
   }
