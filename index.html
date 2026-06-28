@@ -228,6 +228,19 @@
   .cmark.gate{background:var(--green-ok);color:#fff;font-size:14px}
   .calib-bar{display:flex;gap:8px;padding:12px 16px calc(12px + var(--safe-bot));background:#0a2217}
   .calib-bar .btn{flex:1}
+  /* Full-screen ring editor (place fences / draw line) */
+  .bfull{position:fixed;inset:0;z-index:80;background:var(--cream);display:flex;flex-direction:column}
+  .bfull-top{padding:calc(var(--safe-top) + 12px) 16px 4px;text-align:center}
+  .bfull-msg{font-size:13.5px;font-weight:600;color:var(--green-dk);line-height:1.4}
+  .bfull-rot{display:inline-flex;justify-content:center;margin-top:8px}
+  .bfull-stage{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 10px;min-height:0}
+  .bfull-stage svg.ring{width:100%;height:auto;max-height:100%;max-width:100%;touch-action:none}
+  .bfull-bar{display:flex;gap:8px;align-items:center;padding:10px 14px calc(12px + var(--safe-bot))}
+  .bfull-bar .btn{flex:none}
+  .bfull-bar #bfdone{margin-left:auto;min-width:96px}
+  .bfgates{display:flex;gap:5px;flex:1}
+  .bfgates .gatebtn{flex:1;padding:11px 2px;font-size:12px}
+  .ringwrap.tappable{cursor:pointer}
   #cwrap{position:relative;display:inline-block;line-height:0}
   .crop-box{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(8,20,12,.6);box-sizing:border-box;touch-action:none;cursor:move}
   .crop-grid{position:absolute;inset:0;pointer-events:none}
@@ -889,17 +902,13 @@ function renderBuildStep(){
     }
     h += `<div class="field" style="margin-top:14px"><label>Course name</label><input id="bname" type="text" placeholder="e.g. Saturday Mini Derby" maxlength="28" value="${esc(buildName)}"></div>`;
   } else if(buildStep===2){
-    h += `<div class="rotrow"><span>Rotate</span><button class="rotbtn" id="browL" title="Rotate left">⟲</button><button class="rotbtn" id="browR" title="Rotate right">⟳</button></div>`;
-    h += `<div class="hintbar" id="bhint">0 jumps placed — tap inside the ring to start.</div>`;
-    h += `<div class="ringwrap" id="bringwrap"></div>`;
-    h += `<p class="zoomhint">Pinch to zoom in and read the numbers. <button class="linkbtn" id="bzreset" style="display:none">Reset view</button></p>`;
-    h += `<div class="gaterow"><span>In-gate</span>` + ['b','t','l','r'].map(s=>`<button class="gatebtn${buildGate.side===s?' on':''}" data-side="${s}">${GATE_NAMES[s]}</button>`).join('') + `</div>`;
-    h += `<div style="margin:2px 0 0"><input id="bgatepos" type="range" min="12" max="88" value="${Math.round(buildGate.frac*100)}" style="width:100%;accent-color:var(--green)"></div>`;
-    h += `<p class="zoomhint" style="margin-top:5px">Drag the in-gate on the ring, or use the buttons and slider.</p>`;
+    h += `<div class="ringwrap tappable" id="bringwrap"></div>`;
+    h += `<button class="btn gold" id="bfopen">⛶ Place fences &amp; in-gate</button>`;
+    h += `<p class="zoomhint" style="margin-top:7px">${buildJumps.length} fence${buildJumps.length===1?'':'s'} placed · in-gate: ${GATE_NAMES[buildGate.side]}</p>`;
   } else {
-    h += `<div class="hintbar" id="bdrawhint">${buildPath?'Nice line! Draw again to redo it.':'Trace your whole track through the fences in order.'}</div>`;
-    h += `<div class="ringwrap" id="bringwrap"></div>`;
-    h += `<div class="btn-row"><button class="btn ghost" id="bdrawclear">${buildPath?'Clear line':'Use smart line'}</button></div>`;
+    h += `<div class="ringwrap tappable" id="bringwrap"></div>`;
+    h += `<button class="btn gold" id="bfopen">⛶ Draw the line</button>`;
+    h += `<div class="btn-row" style="margin-top:8px"><button class="btn ghost" id="bdrawclear">${buildPath?'Clear line':'Use smart line'}</button></div>`;
   }
 
   h += `<div class="btn-row" style="margin-top:14px">`;
@@ -917,19 +926,15 @@ function wireBuildStep(){
   if(q('bphotoBtn')) q('bphotoBtn').addEventListener('click',()=>pickImage(raw=>openCalibration(raw,(url,gateFrac,rot)=>{ buildPhoto=url; if(gateFrac!=null) buildGate={side:'b',frac:gateFrac}; if(rot!=null) buildRot=rot; renderBuildStep(); })));
   if(q('bphotoClear')) q('bphotoClear').addEventListener('click',()=>{ buildPhoto=null; renderBuildStep(); });
   if(q('bopacity')) q('bopacity').addEventListener('input',e=>{ buildOpacity=e.target.value/100; const im=el('bphoto'); if(im) im.setAttribute('opacity',buildOpacity); });
-  if(q('browL')) q('browL').addEventListener('click',()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(buildStep===2?'jumps':null); });
-  if(q('browR')) q('browR').addEventListener('click',()=>{ buildRot=(buildRot+90)%360; refreshBuildRing(buildStep===2?'jumps':null); });
-  if(q('bringwrap')) refreshBuildRing(buildStep===2?'jumps':buildStep===3?'draw':null);
+  if(q('browL')) q('browL').addEventListener('click',()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing(null); });
+  if(q('browR')) q('browR').addEventListener('click',()=>{ buildRot=(buildRot+90)%360; refreshBuildRing(null); });
+  if(q('bringwrap')) refreshBuildRing(null);     // steps 2 & 3 show a static preview; editing is full screen
   if(q('bname')) q('bname').addEventListener('input',e=>{ buildName=e.target.value; });
-  // in-gate controls
-  el('view-build').querySelectorAll('.gatebtn').forEach(b=>b.addEventListener('click',()=>{
-    buildGate={side:b.dataset.side, frac:buildGate.frac};
-    el('view-build').querySelectorAll('.gatebtn').forEach(x=>x.classList.toggle('on',x===b));
-    redrawGate();
-  }));
-  if(q('bgatepos')) q('bgatepos').addEventListener('input',e=>{ buildGate={side:buildGate.side, frac:e.target.value/100}; redrawGate(); });
-  // draw-line controls
-  if(q('bdrawclear')) q('bdrawclear').addEventListener('click',()=>{ buildPath=null; refreshBuildRing('draw'); const hh=el('bdrawhint'); if(hh) hh.textContent='Trace your whole track through the fences in order.'; const bc=el('bdrawclear'); if(bc) bc.textContent='Use smart line'; });
+  // open the full-screen editor (also by tapping the preview)
+  if(q('bfopen')) q('bfopen').addEventListener('click',()=>openRingEditor(buildStep===2?'fences':'draw'));
+  if(buildStep>1 && q('bringwrap')) q('bringwrap').addEventListener('click',()=>openRingEditor(buildStep===2?'fences':'draw'));
+  // draw-line clear (step 3)
+  if(q('bdrawclear')) q('bdrawclear').addEventListener('click',()=>{ buildPath=null; renderBuildStep(); });
   if(q('bback')) q('bback').addEventListener('click',()=>{ buildStep--; renderBuildStep(); });
   if(q('bnext')) q('bnext').addEventListener('click',()=>{
     if(buildStep===1 && !buildName.trim()){ toast('Give your course a name first'); if(q('bname')) q('bname').focus(); return; }
@@ -940,9 +945,34 @@ function wireBuildStep(){
 }
 function redrawGate(){ const g=el('bgate'); if(!g) return; ROT=buildRot; g.innerHTML=gateSVG(buildGate); ROT=0; }
 function syncGateControls(){
-  const root=el('view-build'); if(!root) return;
-  root.querySelectorAll('.gatebtn').forEach(x=>x.classList.toggle('on', x.dataset.side===buildGate.side));
+  document.querySelectorAll('.gatebtn').forEach(x=>x.classList.toggle('on', x.dataset.side===buildGate.side));
   const sl=el('bgatepos'); if(sl) sl.value=Math.round(buildGate.frac*100);
+}
+/* Full-screen editor for max room: place fences + drag the in-gate ('fences'),
+   or finger-draw the ideal line ('draw'). */
+function openRingEditor(mode){
+  const draw = mode==='draw';
+  if(el('bringwrap')) el('bringwrap').innerHTML='';   // release #bsvg etc. for the full-screen ring
+  const ov=document.createElement('div'); ov.className='bfull';
+  const msg = draw ? 'Trace the line you’d ride — through the fences, in order'
+                   : 'Tap each fence in order (tap again to remove) · drag the in-gate to any rail';
+  const rot = draw ? '' : `<div class="rotrow bfull-rot"><span>Rotate</span><button class="rotbtn" id="bfrotL" title="Rotate left">⟲</button><button class="rotbtn" id="bfrotR" title="Rotate right">⟳</button></div>`;
+  const bar = draw
+    ? `<button class="btn ghost sm" id="bfclear">${buildPath?'Clear':'Smart line'}</button><button class="btn sm" id="bfdone">Done</button>`
+    : `<div class="bfgates">`+['b','t','l','r'].map(s=>`<button class="gatebtn${buildGate.side===s?' on':''}" data-side="${s}">${GATE_NAMES[s]}</button>`).join('')+`</div><button class="btn sm" id="bfdone">Done</button>`;
+  ov.innerHTML = `
+    <div class="bfull-top"><div class="bfull-msg">${msg}</div>${rot}
+      <p class="zoomhint" style="color:#a7b29c;margin:6px 0 0">${draw?'':'Pinch to zoom in. '}<button class="linkbtn" id="bzreset" style="display:none;color:#cdd3c4">Reset view</button></p></div>
+    <div class="bfull-stage" id="bfwrap"></div>
+    <div class="bfull-bar">${bar}</div>`;
+  document.body.appendChild(ov);
+  refreshBuildRing(draw?'draw':'jumps','bfwrap');
+  const done=()=>{ ov.remove(); renderBuildStep(); };
+  if(el('bfdone')) el('bfdone').onclick=done;
+  if(el('bfclear')) el('bfclear').onclick=()=>{ buildPath=null; refreshBuildRing('draw','bfwrap'); const c=el('bfclear'); if(c) c.textContent='Smart line'; };
+  ov.querySelectorAll('.bfgates .gatebtn').forEach(b=>b.addEventListener('click',()=>{ buildGate={side:b.dataset.side,frac:buildGate.frac}; ov.querySelectorAll('.bfgates .gatebtn').forEach(x=>x.classList.toggle('on',x===b)); redrawGate(); }));
+  if(el('bfrotL')) el('bfrotL').onclick=()=>{ buildRot=((buildRot-90)%360+360)%360; refreshBuildRing('jumps','bfwrap'); };
+  if(el('bfrotR')) el('bfrotR').onclick=()=>{ buildRot=(buildRot+90)%360; refreshBuildRing('jumps','bfwrap'); };
 }
 function buildRingSVG(){
   ROT = buildRot;
@@ -957,8 +987,8 @@ function buildRingSVG(){
   ROT = 0;
   return s;
 }
-function refreshBuildRing(mode){
-  const wrap=el('bringwrap'); if(!wrap) return;
+function refreshBuildRing(mode, wrapId){
+  const wrap=el(wrapId||'bringwrap'); if(!wrap) return;
   wrap.innerHTML = buildRingSVG();
   drawBuildJumps();
   if(!mode) return;
@@ -1169,9 +1199,8 @@ function drawBuildJumps(){
   const g = el('bjumps'); if(!g) return;
   ROT = buildRot;
   let s = '';
-  // show the drawn line if there is one, otherwise the smart line through the fences
-  const track = (buildPath && buildPath.length>1) ? buildPath : (buildJumps.length>1 ? buildJumps.map(j=>[j.x,j.y]) : null);
-  if(track) s += `<path class="track${buildPath?' solid':''}" d="${smoothD(track)}"/>`;
+  // only show the line the rider actually drew — no auto-inferred line in the builder
+  if(buildPath && buildPath.length>1) s += `<path class="track solid" d="${smoothD(buildPath)}"/>`;
   buildJumps.forEach((j,i)=>{ s += poleFor(j,jumpDir(buildJumps,i)) + badge(j,j.n); });
   g.innerHTML = s;
   ROT = 0;
@@ -1191,8 +1220,7 @@ function setupBuildDraw(svg){
   function end(){ if(!drawing) return; drawing=false;
     if(pts.length>2){ buildPath=pts.slice(); }
     draw.setAttribute('d',''); drawBuildJumps();
-    const hh=el('bdrawhint'); if(hh) hh.textContent = buildPath?'Nice line! Draw again to redo it.':'Trace your whole track through the fences in order.';
-    const bc=el('bdrawclear'); if(bc) bc.textContent = buildPath?'Clear line':'Use smart line';
+    const bf=el('bfclear'); if(bf) bf.textContent = buildPath?'Clear':'Smart line';
   }
   svg.addEventListener('pointerdown',start); svg.addEventListener('pointermove',add); svg.addEventListener('pointerup',end); svg.addEventListener('pointercancel',end);
   svg.addEventListener('touchstart',start,{passive:false}); svg.addEventListener('touchmove',add,{passive:false}); svg.addEventListener('touchend',end);
