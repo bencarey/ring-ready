@@ -618,6 +618,52 @@ function badge(j,n,rot){
   return `<circle class="badge-c" cx="${j.x}" cy="${j.y}" r="9"/><text class="badge-t" x="${j.x}" y="${j.y}" transform="rotate(${-R} ${j.x} ${j.y})">${n}</text>`;
 }
 
+/* A realistic hunter riding line through the fences when none was drawn:
+   opening courtesy circle out to the rail, straight approaches through each
+   fence, wide turns deep into the corners (no cutting across), closing circle. */
+function idealPath(c){
+  const J=(c.jumps||[]).map(j=>[j.x,j.y]); const n=J.length; if(!n) return J;
+  const cx=(RING.x0+RING.x1)/2, cy=(RING.y0+RING.y1)/2;
+  const IX0=RING.x0+14, IY0=RING.y0+14, IX1=RING.x1-14, IY1=RING.y1-14;
+  const clamp=p=>[Math.max(IX0,Math.min(IX1,p[0])), Math.max(IY0,Math.min(IY1,p[1]))];
+  const gate=gateCenter(c.gate);
+  // travel direction through each fence (average of incoming & outgoing)
+  const wp=[gate, ...J], dir=[];
+  for(let i=0;i<n;i++){
+    const prev=wp[i], cur=J[i], nxt=(i<n-1?J[i+1]:[cur[0]+(cur[0]-prev[0]),cur[1]+(cur[1]-prev[1])]);
+    let dx=nxt[0]-prev[0], dy=nxt[1]-prev[1]; const m=Math.hypot(dx,dy)||1; dir.push([dx/m,dy/m]);
+  }
+  const APP=24, pts=[];
+  // opening: from the in-gate, bow toward the centre and round onto fence 1's line
+  const ap1=clamp([J[0][0]-dir[0][0]*APP, J[0][1]-dir[0][1]*APP]);
+  pts.push(gate);
+  pts.push(clamp([gate[0]+(cx-gate[0])*0.35, gate[1]+(cy-gate[1])*0.35]));
+  pts.push(clamp([ap1[0]+(cx-ap1[0])*0.3, ap1[1]+(cy-ap1[1])*0.3]));
+  pts.push(ap1);
+  for(let i=0;i<n;i++){
+    pts.push(clamp([J[i][0]-dir[i][0]*APP*0.55, J[i][1]-dir[i][1]*APP*0.55]));
+    pts.push(J[i]);
+    pts.push(clamp([J[i][0]+dir[i][0]*APP*0.7, J[i][1]+dir[i][1]*APP*0.7]));
+    if(i<n-1){
+      const dn=dir[i+1];
+      const ang=Math.acos(Math.max(-1,Math.min(1,dir[i][0]*dn[0]+dir[i][1]*dn[1])));
+      if(ang>0.8){ // real turn (not a straight line) — bow the turn out toward the nearest rail
+        const mid=[(J[i][0]+J[i+1][0])/2,(J[i][1]+J[i+1][1])/2];
+        const dL=mid[0]-RING.x0, dR=RING.x1-mid[0], dT=mid[1]-RING.y0, dB=RING.y1-mid[1], mn=Math.min(dL,dR,dT,dB);
+        const f=0.45; // bow partway to the rail, not all the way (keeps the line smooth)
+        const cpt = mn===dL?[mid[0]-(mid[0]-IX0)*f,mid[1]] : mn===dR?[mid[0]+(IX1-mid[0])*f,mid[1]]
+                  : mn===dT?[mid[0],mid[1]-(mid[1]-IY0)*f] : [mid[0],mid[1]+(IY1-mid[1])*f];
+        pts.push(clamp(cpt));
+      }
+    }
+  }
+  // closing: roll off the last fence and finish with a circle toward the centre
+  const last=J[n-1];
+  pts.push(clamp([last[0]+dir[n-1][0]*APP, last[1]+dir[n-1][1]*APP]));
+  pts.push(clamp([cx+(last[0]-cx)*0.35, cy+(last[1]-cy)*0.35]));
+  pts.push([cx,cy]);
+  return pts;
+}
 /* Which lead/turn direction the rider takes at each fence, read off the ideal
    path. A horse should be on the lead that matches the way it's turning, so a
    reversal of turn direction between fences means a lead change is needed. */
@@ -642,12 +688,13 @@ function ridingLeads(c){
 function autoRideSteps(c){
   const leads=ridingLeads(c), n=c.jumps.length;
   const first=leads.find(l=>l)||'right';
-  const steps=[`Trot in, pick up the ${first}-lead canter, and ride a smooth opening circle to set an even pace.`];
+  const steps=[`Trot in, pick up the ${first}-lead canter, and ride a smooth opening circle out to the rail to set an even pace.`];
   let prev=null;
   for(let k=0;k<n;k++){
     const lead=leads[k]; let note='';
     if(lead && prev && lead!==prev) note=` — change to the ${lead} lead for the turn (a flying change if she has it, or a simple change through the trot)`;
-    else if(k===0 && lead) note=` — be on the ${lead} lead for your first turn`;
+    else if(k===0 && lead) note=` — be on the ${lead} lead for your first turn, straight approach with your eyes up`;
+    else note=` — straight approach, keep your pace even`;
     steps.push(`Fence ${k+1}${note}.`);
     if(lead) prev=lead;
   }
@@ -657,7 +704,7 @@ function autoRideSteps(c){
 /* Build a full course study diagram */
 function courseStudySVG(c, showPhoto){
   ROT = getRot(c.id);
-  const path = c.path || c.jumps.map(j=>[j.x,j.y]);
+  const path = c.path || idealPath(c);
   const sx=path[0][0], sy=path[0][1];
   let s = `<svg class="ring" viewBox="${ringVB(ROT)}"><defs><marker id="arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#76806a"/></marker></defs>`;
   s += `<g transform="rotate(${ROT} 180 120)">`;
@@ -843,7 +890,7 @@ function svgPoint(svg,evt){
 /* Trace the track: draw the whole riding path with a finger */
 function renderTrace(c){
   const rott = getRot(c.id); ROT = rott;
-  const ideal = c.path || c.jumps.map(j=>[j.x,j.y]);
+  const ideal = c.path || idealPath(c);
   const sx=ideal[0][0], sy=ideal[0][1];
   let h = `<div class="status" id="tstatus">Ride the whole track from memory — finger-trace through every fence in the right order.</div>`;
   h += `<div class="ringwrap"><svg class="ring trace" viewBox="${ringVB(rott)}" id="tsvg"><g transform="rotate(${rott} 180 120)">`;
