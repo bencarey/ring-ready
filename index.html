@@ -130,6 +130,10 @@
   ol.steps{margin:6px 0 0;padding-left:0;list-style:none;counter-reset:s}
   ol.steps li{position:relative;padding:8px 10px 8px 38px;margin-bottom:6px;background:var(--green-soft);border-radius:9px;font-size:12.5px;line-height:1.35;color:var(--ink)}
   ol.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:8px;top:7px;width:21px;height:21px;background:var(--green);color:#f3f0e7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+  ol.steps .cue-note{margin-top:5px;padding:6px 9px;background:var(--card);border:1px solid var(--gold);border-radius:8px;color:var(--gold-dp);font-size:12px;line-height:1.4}
+  ol.steps .cue-btn{margin-top:5px;font-size:11.5px}
+  ol.steps .cue-edit input{width:100%;padding:9px 10px;border:1px solid var(--green-md);border-radius:8px;font-size:13px;background:var(--card);color:var(--ink);font-family:inherit;box-sizing:border-box}
+  ol.steps .cue-edit input:focus{outline:none}
   /* Quiz status */
   .status{font-size:13.5px;font-weight:500;text-align:center;padding:9px 11px;border-radius:10px;margin-bottom:9px;background:var(--green-soft);color:var(--green-dk);min-height:18px;letter-spacing:.2px;line-height:1.35}
   .status.ok{background:#e3ebdb;color:var(--green-ok)}
@@ -513,6 +517,9 @@ function getName(){return localStorage.getItem('rr_name')||'';}
 function setName(n){localStorage.setItem('rr_name',n);}
 function getSaved(){try{return JSON.parse(localStorage.getItem('rr_courses')||'[]');}catch(e){return [];}}
 function setSaved(a){localStorage.setItem('rr_courses',JSON.stringify(a));}
+/* Personal riding cues, keyed by course id then step index. */
+function getCues(id){ try{ return (JSON.parse(localStorage.getItem('rr_cues')||'{}')[id])||{}; }catch(e){ return {}; } }
+function setCue(id,idx,text){ let m={}; try{ m=JSON.parse(localStorage.getItem('rr_cues')||'{}'); }catch(e){} m[id]=m[id]||{}; if(text) m[id][idx]=text; else delete m[id][idx]; localStorage.setItem('rr_cues',JSON.stringify(m)); }
 function allCourses(){return COURSES.concat(getSaved());}
 /* User-built courses (id starts with 'u') store fences as bare points, so the
    inferred jump "pole" can mis-align — show just the numbered marker for them. */
@@ -611,6 +618,42 @@ function badge(j,n,rot){
   return `<circle class="badge-c" cx="${j.x}" cy="${j.y}" r="9"/><text class="badge-t" x="${j.x}" y="${j.y}" transform="rotate(${-R} ${j.x} ${j.y})">${n}</text>`;
 }
 
+/* Which lead/turn direction the rider takes at each fence, read off the ideal
+   path. A horse should be on the lead that matches the way it's turning, so a
+   reversal of turn direction between fences means a lead change is needed. */
+function ridingLeads(c){
+  const J=c.jumps; if(!J||!J.length) return [];
+  const start = (c.path&&c.path.length) ? c.path[0] : [(RING.x0+RING.x1)/2, RING.y1-6];
+  const W=[start, ...J.map(j=>[j.x,j.y])];
+  const out=[]; let prev=null;
+  for(let k=0;k<J.length;k++){
+    const a=W[k], b=W[k+1], n=W[k+2];
+    if(!n){ out.push(prev); continue; }
+    const vin=[b[0]-a[0],b[1]-a[1]], vo=[n[0]-b[0],n[1]-b[1]];
+    const cr=vin[0]*vo[1]-vin[1]*vo[0];               // SVG y-down: >0 = turning right
+    const m=(Math.hypot(vin[0],vin[1])*Math.hypot(vo[0],vo[1]))||1;
+    const s=cr/m;                                     // sin of the turn angle
+    const lead = Math.abs(s)<0.25 ? prev : (s>0?'right':'left'); // shallow bend = same lead (a line)
+    out.push(lead); if(lead) prev=lead;
+  }
+  return out;
+}
+/* Auto "how to ride" steps for a built course, with lead/turn cues from the path. */
+function autoRideSteps(c){
+  const leads=ridingLeads(c), n=c.jumps.length;
+  const first=leads.find(l=>l)||'right';
+  const steps=[`Trot in, pick up the ${first}-lead canter, and ride a smooth opening circle to set an even pace.`];
+  let prev=null;
+  for(let k=0;k<n;k++){
+    const lead=leads[k]; let note='';
+    if(lead && prev && lead!==prev) note=` — change to the ${lead} lead for the turn (a flying change if she has it, or a simple change through the trot)`;
+    else if(k===0 && lead) note=` — be on the ${lead} lead for your first turn`;
+    steps.push(`Fence ${k+1}${note}.`);
+    if(lead) prev=lead;
+  }
+  steps.push(`Closing circle, come back to a trot, and leave the ring on a long rein.`);
+  return steps;
+}
 /* Build a full course study diagram */
 function courseStudySVG(c, showPhoto){
   ROT = getRot(c.id);
@@ -673,6 +716,7 @@ function findCourse(id){return allCourses().find(c=>c.id===id);}
 
 function openCourse(id){
   const c = findCourse(id); if(!c) return;
+  studyEditIdx = -1;
   const isSaved = !COURSES.includes(c);
   let h = `<button class="back" id="bk">‹ All courses</button>`;
   h += `<h2 class="title">${esc(c.name)}</h2><p class="sub">${esc(c.level||'Custom')} · ${c.jumps.length} jumps</p>`;
@@ -700,17 +744,33 @@ function setTab(which){
   el('tab-quiz').classList.toggle('active',which==='quiz');
 }
 let studyPhotoOn = true;   // show the posted-course photo as a backdrop by default
+let studyEditIdx = -1;     // which step's personal-note editor is open (-1 = none)
 function renderStudy(c){
-  const steps = c.steps || c.jumps.map((j,i)=> i===0?`Open with a circle, then ride to fence 1.`:`Continue to fence ${j.n}.`);
+  const steps = c.steps || autoRideSteps(c);
+  const cues = getCues(c.id);
   const showPhoto = !!(c.photo && studyPhotoOn);
   let h = `<div class="ringwrap" style="max-width:280px">${courseStudySVG(c, showPhoto)}</div>`;
   if(c.photo){
     h += `<button class="btn ghost sm" id="viewPhoto" style="margin-bottom:10px">${studyPhotoOn?'🙈 Hide photo':'📷 Show photo'}</button>`;
   }
   h += `<div class="card" style="padding:13px"><strong style="color:var(--green-dk);font-size:14px">Ride it like this</strong>`
-     + `<ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>`;
+     + `<ol class="steps">` + steps.map((s,i)=>{
+        const cue=cues[i];
+        let inner=`<div class="step-txt">${esc(s)}</div>`;
+        if(i===studyEditIdx){
+          inner+=`<div class="cue-edit"><input id="cueInput" type="text" maxlength="90" value="${esc(cue||'')}" placeholder="Your cue… e.g. sit up, look for the turn"><div class="btn-row" style="margin-top:7px"><button class="btn ghost sm" id="cueCancel">Cancel</button><button class="btn sm" id="cueSave">Save note</button></div></div>`;
+        } else {
+          if(cue) inner+=`<div class="cue-note">📝 ${esc(cue)}</div>`;
+          inner+=`<button class="linkbtn cue-btn" data-i="${i}">${cue?'Edit note':'+ Add your note'}</button>`;
+        }
+        return `<li>${inner}</li>`;
+       }).join('') + `</ol></div>`;
   el('course-body').innerHTML = h;
   if(c.photo) el('viewPhoto').addEventListener('click',()=>{ studyPhotoOn=!studyPhotoOn; renderStudy(c); });
+  el('course-body').querySelectorAll('.cue-btn').forEach(b=>b.addEventListener('click',()=>{ studyEditIdx=+b.dataset.i; renderStudy(c); const inp=el('cueInput'); if(inp){ inp.focus(); } }));
+  if(el('cueSave')) el('cueSave').addEventListener('click',()=>{ setCue(c.id, studyEditIdx, el('cueInput').value.trim()); studyEditIdx=-1; renderStudy(c); });
+  if(el('cueCancel')) el('cueCancel').addEventListener('click',()=>{ studyEditIdx=-1; renderStudy(c); });
+  const inp=el('cueInput'); if(inp) inp.addEventListener('keydown',e=>{ if(e.key==='Enter') el('cueSave').click(); });
 }
 
 /* Quiz: tap jumps in order */
